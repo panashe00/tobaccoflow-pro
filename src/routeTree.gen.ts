@@ -9,9 +9,69 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WeighingRouteImport } from './routes/weighing'
+import { Route as UsersRouteImport } from './routes/users'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SalesheetRouteImport } from './routes/salesheet'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ProcessingRouteImport } from './routes/processing'
+import { Route as PreProcessingRouteImport } from './routes/pre-processing'
+import { Route as DispatchRouteImport } from './routes/dispatch'
+import { Route as DeliveryNotesRouteImport } from './routes/delivery-notes'
+import { Route as DeductionsRouteImport } from './routes/deductions'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 
+const WeighingRoute = WeighingRouteImport.update({
+  id: '/weighing',
+  path: '/weighing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsersRoute = UsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesheetRoute = SalesheetRouteImport.update({
+  id: '/salesheet',
+  path: '/salesheet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProcessingRoute = ProcessingRouteImport.update({
+  id: '/processing',
+  path: '/processing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreProcessingRoute = PreProcessingRouteImport.update({
+  id: '/pre-processing',
+  path: '/pre-processing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DispatchRoute = DispatchRouteImport.update({
+  id: '/dispatch',
+  path: '/dispatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeliveryNotesRoute = DeliveryNotesRouteImport.update({
+  id: '/delivery-notes',
+  path: '/delivery-notes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeductionsRoute = DeductionsRouteImport.update({
+  id: '/deductions',
+  path: '/deductions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -26,31 +86,178 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/deductions': typeof DeductionsRoute
+  '/delivery-notes': typeof DeliveryNotesRoute
+  '/dispatch': typeof DispatchRoute
+  '/pre-processing': typeof PreProcessingRoute
+  '/processing': typeof ProcessingRoute
+  '/reports': typeof ReportsRoute
+  '/salesheet': typeof SalesheetRoute
+  '/settings': typeof SettingsRoute
+  '/users': typeof UsersRoute
+  '/weighing': typeof WeighingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/deductions': typeof DeductionsRoute
+  '/delivery-notes': typeof DeliveryNotesRoute
+  '/dispatch': typeof DispatchRoute
+  '/pre-processing': typeof PreProcessingRoute
+  '/processing': typeof ProcessingRoute
+  '/reports': typeof ReportsRoute
+  '/salesheet': typeof SalesheetRoute
+  '/settings': typeof SettingsRoute
+  '/users': typeof UsersRoute
+  '/weighing': typeof WeighingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/deductions': typeof DeductionsRoute
+  '/delivery-notes': typeof DeliveryNotesRoute
+  '/dispatch': typeof DispatchRoute
+  '/pre-processing': typeof PreProcessingRoute
+  '/processing': typeof ProcessingRoute
+  '/reports': typeof ReportsRoute
+  '/salesheet': typeof SalesheetRoute
+  '/settings': typeof SettingsRoute
+  '/users': typeof UsersRoute
+  '/weighing': typeof WeighingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/deductions'
+    | '/delivery-notes'
+    | '/dispatch'
+    | '/pre-processing'
+    | '/processing'
+    | '/reports'
+    | '/salesheet'
+    | '/settings'
+    | '/users'
+    | '/weighing'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard'
-  id: '__root__' | '/' | '/dashboard'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/deductions'
+    | '/delivery-notes'
+    | '/dispatch'
+    | '/pre-processing'
+    | '/processing'
+    | '/reports'
+    | '/salesheet'
+    | '/settings'
+    | '/users'
+    | '/weighing'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/deductions'
+    | '/delivery-notes'
+    | '/dispatch'
+    | '/pre-processing'
+    | '/processing'
+    | '/reports'
+    | '/salesheet'
+    | '/settings'
+    | '/users'
+    | '/weighing'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  DeductionsRoute: typeof DeductionsRoute
+  DeliveryNotesRoute: typeof DeliveryNotesRoute
+  DispatchRoute: typeof DispatchRoute
+  PreProcessingRoute: typeof PreProcessingRoute
+  ProcessingRoute: typeof ProcessingRoute
+  ReportsRoute: typeof ReportsRoute
+  SalesheetRoute: typeof SalesheetRoute
+  SettingsRoute: typeof SettingsRoute
+  UsersRoute: typeof UsersRoute
+  WeighingRoute: typeof WeighingRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/weighing': {
+      id: '/weighing'
+      path: '/weighing'
+      fullPath: '/weighing'
+      preLoaderRoute: typeof WeighingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users': {
+      id: '/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/salesheet': {
+      id: '/salesheet'
+      path: '/salesheet'
+      fullPath: '/salesheet'
+      preLoaderRoute: typeof SalesheetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/processing': {
+      id: '/processing'
+      path: '/processing'
+      fullPath: '/processing'
+      preLoaderRoute: typeof ProcessingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pre-processing': {
+      id: '/pre-processing'
+      path: '/pre-processing'
+      fullPath: '/pre-processing'
+      preLoaderRoute: typeof PreProcessingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dispatch': {
+      id: '/dispatch'
+      path: '/dispatch'
+      fullPath: '/dispatch'
+      preLoaderRoute: typeof DispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delivery-notes': {
+      id: '/delivery-notes'
+      path: '/delivery-notes'
+      fullPath: '/delivery-notes'
+      preLoaderRoute: typeof DeliveryNotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deductions': {
+      id: '/deductions'
+      path: '/deductions'
+      fullPath: '/deductions'
+      preLoaderRoute: typeof DeductionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -71,6 +278,16 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  DeductionsRoute: DeductionsRoute,
+  DeliveryNotesRoute: DeliveryNotesRoute,
+  DispatchRoute: DispatchRoute,
+  PreProcessingRoute: PreProcessingRoute,
+  ProcessingRoute: ProcessingRoute,
+  ReportsRoute: ReportsRoute,
+  SalesheetRoute: SalesheetRoute,
+  SettingsRoute: SettingsRoute,
+  UsersRoute: UsersRoute,
+  WeighingRoute: WeighingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
