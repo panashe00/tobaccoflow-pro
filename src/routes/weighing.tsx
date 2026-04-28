@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Scan, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Printer, Scan, AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react";
 import { DELIVERY_NOTES, SALE_DATE, formatNum } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
