@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Scan, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Printer, Scan, AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react";
 import { DELIVERY_NOTES, SALE_DATE, formatNum } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
@@ -70,6 +70,63 @@ function Weighing() {
             </div>
           </CardContent></Card>
         </div>
+
+        <Card className="mb-4">
+          <CardHeader className="pb-2 flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-sm">Delivery Notes Ready for Weighing</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">Pending D-Notes received at intake. Select one to begin weighing its bales.</p>
+            </div>
+            <Badge variant="outline" className="font-mono">{DELIVERY_NOTES.filter(d => d.status === "pending").length} pending</Badge>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>D-Note</TableHead>
+                <TableHead>Grower</TableHead>
+                <TableHead>Branch</TableHead>
+                <TableHead>Transporter</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Bales</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {DELIVERY_NOTES.filter(d => d.status === "pending").map((d) => {
+                  const isActive = d.dn === dn;
+                  return (
+                    <TableRow key={d.dn} className={isActive ? "bg-muted/40" : ""}>
+                      <TableCell className="font-mono text-xs">{d.dn}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">{d.growerName}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{d.grower}</div>
+                      </TableCell>
+                      <TableCell className="text-sm">{d.branch}</TableCell>
+                      <TableCell className="text-sm">{d.transporter}</TableCell>
+                      <TableCell className="font-mono text-xs">{d.date}</TableCell>
+                      <TableCell className="text-right font-mono">{d.bales}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant={isActive ? "secondary" : "default"}
+                          onClick={() => {
+                            setDn(d.dn);
+                            setBales([]);
+                            toast.success(`Started weighing ${d.dn} · ${d.bales} bales expected`);
+                          }}
+                        >
+                          {isActive ? "Selected" : <>Start <ArrowRight className="size-3 ml-1" /></>}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {DELIVERY_NOTES.filter(d => d.status === "pending").length === 0 && (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6 text-sm">No pending delivery notes</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-1">
