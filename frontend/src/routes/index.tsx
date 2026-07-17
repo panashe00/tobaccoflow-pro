@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BRANCHES } from "@/lib/dummy-data";
+import { api, ApiError } from "../lib/api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({ component: Login });
@@ -14,14 +15,23 @@ export const Route = createFileRoute("/")({ component: Login });
 function Login() {
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState("tmoyo");
+  const [password, setPassword] = useState("demo1234");
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      toast.success("Welcome back, Tatenda Moyo");
+    try {
+      await api.login(username, password);
+      const me = await api.me();
+      toast.success(`Welcome back, ${me.first_name} ${me.last_name}`);
       nav({ to: "/dashboard" });
-    }, 700);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "Login failed";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,14 +60,27 @@ function Login() {
               <Label htmlFor="u" className="text-xs">Username</Label>
               <div className="relative">
                 <User className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input id="u" defaultValue="tmoyo" className="pl-8" required />
+                <Input
+                  id="u"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="pl-8"
+                  required
+                />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="p" className="text-xs">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input id="p" type="password" defaultValue="demo1234" className="pl-8" required />
+                <Input
+                  id="p"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-8"
+                  required
+                />
               </div>
             </div>
             <div className="space-y-1.5">

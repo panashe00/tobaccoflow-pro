@@ -1,0 +1,39 @@
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
+
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function request(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    credentials: "include", // sends/receives the httpOnly cookies
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+  if (!res.ok) {
+    let message = "Something went wrong";
+    try {
+      const data = await res.json();
+      message = data.detail ?? message;
+    } catch {}
+    throw new ApiError(message, res.status);
+  }
+
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+export const api = {
+  login: (username: string, password: string) =>
+    request("/auth/login/", { method: "POST", body: JSON.stringify({ username, password }) }),
+  logout: () => request("/auth/logout/", { method: "POST" }),
+  me: () => request("/users/me/"),
+};
