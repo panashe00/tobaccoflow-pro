@@ -11,7 +11,7 @@ import { Scan, Search } from "lucide-react";
 import { BALES, SALE_DATE } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/pre-processing")({
+export const Route = createFileRoute("/_authenticated/pre-processing")({
   head: () => ({ meta: [{ title: "Ticket Pre-Processing · TIMS" }] }),
   component: PreProcessing,
 });

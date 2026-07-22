@@ -12,7 +12,7 @@ import { Scan, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { BALES } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/processing")({
+export const Route = createFileRoute("/_authenticated/processing")({
   head: () => ({ meta: [{ title: "Bale Processing · TIMS" }] }),
   component: Processing,
 });

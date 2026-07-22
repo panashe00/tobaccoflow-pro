@@ -9,7 +9,7 @@ import { FileSpreadsheet, FileText, Printer, BarChart3, AlertTriangle, Truck, Re
 import { BRANCHES } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/reports")({
+export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({ meta: [{ title: "Reports · TIMS" }] }),
   component: Reports,
 });

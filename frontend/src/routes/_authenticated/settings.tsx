@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { BRANCHES, ROLES, EXCHANGE_RATE, SALE_DATE } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings · TIMS" }] }),
   component: Settings,
 });

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { KPI, INTAKE_DAILY, BRANCH_PERF, MONTHLY_SALES, DELIVERY_NOTES, BALES, formatUSD } from "@/lib/dummy-data";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard · TIMS" }] }),
   component: Dashboard,
 });

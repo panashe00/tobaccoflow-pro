@@ -12,7 +12,7 @@ import { Trash2, Plus, ArrowRight, CheckCircle2 } from "lucide-react";
 import { GROWERS, DELIVERY_NOTES, formatUSD } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/deductions")({
+export const Route = createFileRoute("/_authenticated/deductions")({
   head: () => ({ meta: [{ title: "Deductions · TIMS" }] }),
   component: Deductions,
 });

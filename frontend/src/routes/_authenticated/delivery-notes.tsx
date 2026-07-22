@@ -16,7 +16,7 @@ import { Plus, Printer, Search } from "lucide-react";
 import { DELIVERY_NOTES, GROWERS, TRANSPORTERS, BRANCHES } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/delivery-notes")({
+export const Route = createFileRoute("/_authenticated/delivery-notes")({
   head: () => ({ meta: [{ title: "Delivery Notes · TIMS" }] }),
   component: DeliveryNotes,
 });

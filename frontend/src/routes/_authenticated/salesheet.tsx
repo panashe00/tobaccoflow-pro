@@ -13,7 +13,7 @@ import { Printer, FileDown, AlertTriangle, ShieldCheck, Leaf } from "lucide-reac
 import { GROWERS, BALES, EXCHANGE_RATE, SALE_DATE, formatUSD, formatNum } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/salesheet")({
+export const Route = createFileRoute("/_authenticated/salesheet")({
   head: () => ({ meta: [{ title: "Salesheet Generation · TIMS" }] }),
   component: Salesheet,
 });

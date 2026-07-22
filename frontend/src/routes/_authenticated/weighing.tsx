@@ -12,7 +12,7 @@ import { Printer, Scan, AlertTriangle, CheckCircle2, ArrowRight } from "lucide-r
 import { DELIVERY_NOTES, SALE_DATE, formatNum } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/weighing")({
+export const Route = createFileRoute("/_authenticated/weighing")({
   head: () => ({ meta: [{ title: "Bale Weighing · TIMS" }] }),
   component: Weighing,
 });

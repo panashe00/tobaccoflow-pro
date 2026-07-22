@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useRouteContext } from "@tanstack/react-router";
 import {
   LayoutDashboard, FileText, Scale, Receipt, ScanLine, CheckCircle2,
   FileSpreadsheet, Truck, Settings, BarChart3, Users, LogOut, Search,
@@ -13,6 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SALE_DATE, EXCHANGE_RATE } from "@/lib/dummy-data";
+import { api } from "@/lib/api";
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrator",
+  accounts: "Accounts",
+  data: "Data Capturing",
+  growers: "Growers Rep",
+};
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -34,6 +42,19 @@ const NAV_ADMIN = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const loc = useLocation();
   const nav = useNavigate();
+  const { user } = useRouteContext({ from: "/_authenticated" });
+
+  const initials = `${user.first_name?.[0] ?? ""}${user.last_name?.[0] ?? ""}`.toUpperCase() || user.username[0].toUpperCase();
+  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username;
+  const roleLabel = ROLE_LABELS[user.role] ?? user.role;
+
+  const handleSignOut = async () => {
+    try {
+      await api.logout();
+    } finally {
+      nav({ to: "/" });
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -65,22 +86,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               })}
             </div>
           </div>
-          <div>
-            <div className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">Administration</div>
-            <div className="space-y-0.5">
-              {NAV_ADMIN.map((n) => {
-                const active = loc.pathname === n.to;
-                return (
-                  <Link key={n.to} to={n.to}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors ${
-                      active ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50"
-                    }`}>
-                    <n.icon className="size-4" />{n.label}
-                  </Link>
-                );
-              })}
+
+          {user.role === "admin" && (
+            <div>
+              <div className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">Administration</div>
+              <div className="space-y-0.5">
+                {NAV_ADMIN.map((n) => {
+                  const active = loc.pathname === n.to;
+                  return (
+                    <Link key={n.to} to={n.to}
+                      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors ${
+                        active ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50"
+                      }`}>
+                      <n.icon className="size-4" />{n.label}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
+
         </nav>
         <div className="px-4 py-3 border-t border-sidebar-border text-[11px] text-sidebar-foreground/60">
           <div className="flex justify-between"><span>Sale Date</span><span className="font-mono text-sidebar-foreground/90">{SALE_DATE}</span></div>
@@ -106,10 +131,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="gap-2 h-9 px-2">
-                  <Avatar className="size-7"><AvatarFallback className="text-xs bg-primary/10 text-primary">TM</AvatarFallback></Avatar>
+                  <Avatar className="size-7"><AvatarFallback className="text-xs bg-primary/10 text-primary">{initials}</AvatarFallback></Avatar>
                   <div className="text-left hidden md:block">
-                    <div className="text-xs font-medium leading-tight">Tatenda Moyo</div>
-                    <div className="text-[10px] text-muted-foreground leading-tight">Administrator</div>
+                    <div className="text-xs font-medium leading-tight">{fullName}</div>
+                    <div className="text-[10px] text-muted-foreground leading-tight">{roleLabel}</div>
                   </div>
                   <ChevronDown className="size-3 text-muted-foreground" />
                 </Button>
@@ -120,7 +145,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <DropdownMenuItem>Profile</DropdownMenuItem>
                 <DropdownMenuItem>Audit Log</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => nav({ to: "/" })} className="text-destructive">
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                   <LogOut className="size-4 mr-2" />Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>

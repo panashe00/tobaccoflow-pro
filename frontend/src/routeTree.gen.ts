@@ -9,72 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WeighingRouteImport } from './routes/weighing'
-import { Route as UsersRouteImport } from './routes/users'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as SalesheetRouteImport } from './routes/salesheet'
-import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as ProcessingRouteImport } from './routes/processing'
-import { Route as PreProcessingRouteImport } from './routes/pre-processing'
-import { Route as DispatchRouteImport } from './routes/dispatch'
-import { Route as DeliveryNotesRouteImport } from './routes/delivery-notes'
-import { Route as DeductionsRouteImport } from './routes/deductions'
-import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedWeighingRouteImport } from './routes/_authenticated/weighing'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedSalesheetRouteImport } from './routes/_authenticated/salesheet'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedProcessingRouteImport } from './routes/_authenticated/processing'
+import { Route as AuthenticatedPreProcessingRouteImport } from './routes/_authenticated/pre-processing'
+import { Route as AuthenticatedDispatchRouteImport } from './routes/_authenticated/dispatch'
+import { Route as AuthenticatedDeliveryNotesRouteImport } from './routes/_authenticated/delivery-notes'
+import { Route as AuthenticatedDeductionsRouteImport } from './routes/_authenticated/deductions'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 
-const WeighingRoute = WeighingRouteImport.update({
-  id: '/weighing',
-  path: '/weighing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const UsersRoute = UsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SalesheetRoute = SalesheetRouteImport.update({
-  id: '/salesheet',
-  path: '/salesheet',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportsRoute = ReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProcessingRoute = ProcessingRouteImport.update({
-  id: '/processing',
-  path: '/processing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreProcessingRoute = PreProcessingRouteImport.update({
-  id: '/pre-processing',
-  path: '/pre-processing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DispatchRoute = DispatchRouteImport.update({
-  id: '/dispatch',
-  path: '/dispatch',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DeliveryNotesRoute = DeliveryNotesRouteImport.update({
-  id: '/delivery-notes',
-  path: '/delivery-notes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DeductionsRoute = DeductionsRouteImport.update({
-  id: '/deductions',
-  path: '/deductions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -82,49 +32,107 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedWeighingRoute = AuthenticatedWeighingRouteImport.update({
+  id: '/weighing',
+  path: '/weighing',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSalesheetRoute = AuthenticatedSalesheetRouteImport.update({
+  id: '/salesheet',
+  path: '/salesheet',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProcessingRoute = AuthenticatedProcessingRouteImport.update({
+  id: '/processing',
+  path: '/processing',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPreProcessingRoute =
+  AuthenticatedPreProcessingRouteImport.update({
+    id: '/pre-processing',
+    path: '/pre-processing',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDispatchRoute = AuthenticatedDispatchRouteImport.update({
+  id: '/dispatch',
+  path: '/dispatch',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDeliveryNotesRoute =
+  AuthenticatedDeliveryNotesRouteImport.update({
+    id: '/delivery-notes',
+    path: '/delivery-notes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDeductionsRoute = AuthenticatedDeductionsRouteImport.update({
+  id: '/deductions',
+  path: '/deductions',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/deductions': typeof DeductionsRoute
-  '/delivery-notes': typeof DeliveryNotesRoute
-  '/dispatch': typeof DispatchRoute
-  '/pre-processing': typeof PreProcessingRoute
-  '/processing': typeof ProcessingRoute
-  '/reports': typeof ReportsRoute
-  '/salesheet': typeof SalesheetRoute
-  '/settings': typeof SettingsRoute
-  '/users': typeof UsersRoute
-  '/weighing': typeof WeighingRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/deductions': typeof AuthenticatedDeductionsRoute
+  '/delivery-notes': typeof AuthenticatedDeliveryNotesRoute
+  '/dispatch': typeof AuthenticatedDispatchRoute
+  '/pre-processing': typeof AuthenticatedPreProcessingRoute
+  '/processing': typeof AuthenticatedProcessingRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/salesheet': typeof AuthenticatedSalesheetRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/weighing': typeof AuthenticatedWeighingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/deductions': typeof DeductionsRoute
-  '/delivery-notes': typeof DeliveryNotesRoute
-  '/dispatch': typeof DispatchRoute
-  '/pre-processing': typeof PreProcessingRoute
-  '/processing': typeof ProcessingRoute
-  '/reports': typeof ReportsRoute
-  '/salesheet': typeof SalesheetRoute
-  '/settings': typeof SettingsRoute
-  '/users': typeof UsersRoute
-  '/weighing': typeof WeighingRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/deductions': typeof AuthenticatedDeductionsRoute
+  '/delivery-notes': typeof AuthenticatedDeliveryNotesRoute
+  '/dispatch': typeof AuthenticatedDispatchRoute
+  '/pre-processing': typeof AuthenticatedPreProcessingRoute
+  '/processing': typeof AuthenticatedProcessingRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/salesheet': typeof AuthenticatedSalesheetRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/weighing': typeof AuthenticatedWeighingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/deductions': typeof DeductionsRoute
-  '/delivery-notes': typeof DeliveryNotesRoute
-  '/dispatch': typeof DispatchRoute
-  '/pre-processing': typeof PreProcessingRoute
-  '/processing': typeof ProcessingRoute
-  '/reports': typeof ReportsRoute
-  '/salesheet': typeof SalesheetRoute
-  '/settings': typeof SettingsRoute
-  '/users': typeof UsersRoute
-  '/weighing': typeof WeighingRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/deductions': typeof AuthenticatedDeductionsRoute
+  '/_authenticated/delivery-notes': typeof AuthenticatedDeliveryNotesRoute
+  '/_authenticated/dispatch': typeof AuthenticatedDispatchRoute
+  '/_authenticated/pre-processing': typeof AuthenticatedPreProcessingRoute
+  '/_authenticated/processing': typeof AuthenticatedProcessingRoute
+  '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/salesheet': typeof AuthenticatedSalesheetRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/_authenticated/weighing': typeof AuthenticatedWeighingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -158,111 +166,32 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
-    | '/deductions'
-    | '/delivery-notes'
-    | '/dispatch'
-    | '/pre-processing'
-    | '/processing'
-    | '/reports'
-    | '/salesheet'
-    | '/settings'
-    | '/users'
-    | '/weighing'
+    | '/_authenticated'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/deductions'
+    | '/_authenticated/delivery-notes'
+    | '/_authenticated/dispatch'
+    | '/_authenticated/pre-processing'
+    | '/_authenticated/processing'
+    | '/_authenticated/reports'
+    | '/_authenticated/salesheet'
+    | '/_authenticated/settings'
+    | '/_authenticated/users'
+    | '/_authenticated/weighing'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
-  DeductionsRoute: typeof DeductionsRoute
-  DeliveryNotesRoute: typeof DeliveryNotesRoute
-  DispatchRoute: typeof DispatchRoute
-  PreProcessingRoute: typeof PreProcessingRoute
-  ProcessingRoute: typeof ProcessingRoute
-  ReportsRoute: typeof ReportsRoute
-  SalesheetRoute: typeof SalesheetRoute
-  SettingsRoute: typeof SettingsRoute
-  UsersRoute: typeof UsersRoute
-  WeighingRoute: typeof WeighingRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/weighing': {
-      id: '/weighing'
-      path: '/weighing'
-      fullPath: '/weighing'
-      preLoaderRoute: typeof WeighingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/users': {
-      id: '/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof UsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/salesheet': {
-      id: '/salesheet'
-      path: '/salesheet'
-      fullPath: '/salesheet'
-      preLoaderRoute: typeof SalesheetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reports': {
-      id: '/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/processing': {
-      id: '/processing'
-      path: '/processing'
-      fullPath: '/processing'
-      preLoaderRoute: typeof ProcessingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pre-processing': {
-      id: '/pre-processing'
-      path: '/pre-processing'
-      fullPath: '/pre-processing'
-      preLoaderRoute: typeof PreProcessingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dispatch': {
-      id: '/dispatch'
-      path: '/dispatch'
-      fullPath: '/dispatch'
-      preLoaderRoute: typeof DispatchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/delivery-notes': {
-      id: '/delivery-notes'
-      path: '/delivery-notes'
-      fullPath: '/delivery-notes'
-      preLoaderRoute: typeof DeliveryNotesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/deductions': {
-      id: '/deductions'
-      path: '/deductions'
-      fullPath: '/deductions'
-      preLoaderRoute: typeof DeductionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -272,22 +201,121 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/weighing': {
+      id: '/_authenticated/weighing'
+      path: '/weighing'
+      fullPath: '/weighing'
+      preLoaderRoute: typeof AuthenticatedWeighingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/salesheet': {
+      id: '/_authenticated/salesheet'
+      path: '/salesheet'
+      fullPath: '/salesheet'
+      preLoaderRoute: typeof AuthenticatedSalesheetRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/processing': {
+      id: '/_authenticated/processing'
+      path: '/processing'
+      fullPath: '/processing'
+      preLoaderRoute: typeof AuthenticatedProcessingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pre-processing': {
+      id: '/_authenticated/pre-processing'
+      path: '/pre-processing'
+      fullPath: '/pre-processing'
+      preLoaderRoute: typeof AuthenticatedPreProcessingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dispatch': {
+      id: '/_authenticated/dispatch'
+      path: '/dispatch'
+      fullPath: '/dispatch'
+      preLoaderRoute: typeof AuthenticatedDispatchRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/delivery-notes': {
+      id: '/_authenticated/delivery-notes'
+      path: '/delivery-notes'
+      fullPath: '/delivery-notes'
+      preLoaderRoute: typeof AuthenticatedDeliveryNotesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/deductions': {
+      id: '/_authenticated/deductions'
+      path: '/deductions'
+      fullPath: '/deductions'
+      preLoaderRoute: typeof AuthenticatedDeductionsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDeductionsRoute: typeof AuthenticatedDeductionsRoute
+  AuthenticatedDeliveryNotesRoute: typeof AuthenticatedDeliveryNotesRoute
+  AuthenticatedDispatchRoute: typeof AuthenticatedDispatchRoute
+  AuthenticatedPreProcessingRoute: typeof AuthenticatedPreProcessingRoute
+  AuthenticatedProcessingRoute: typeof AuthenticatedProcessingRoute
+  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedSalesheetRoute: typeof AuthenticatedSalesheetRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
+  AuthenticatedWeighingRoute: typeof AuthenticatedWeighingRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDeductionsRoute: AuthenticatedDeductionsRoute,
+  AuthenticatedDeliveryNotesRoute: AuthenticatedDeliveryNotesRoute,
+  AuthenticatedDispatchRoute: AuthenticatedDispatchRoute,
+  AuthenticatedPreProcessingRoute: AuthenticatedPreProcessingRoute,
+  AuthenticatedProcessingRoute: AuthenticatedProcessingRoute,
+  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedSalesheetRoute: AuthenticatedSalesheetRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
+  AuthenticatedWeighingRoute: AuthenticatedWeighingRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
-  DeductionsRoute: DeductionsRoute,
-  DeliveryNotesRoute: DeliveryNotesRoute,
-  DispatchRoute: DispatchRoute,
-  PreProcessingRoute: PreProcessingRoute,
-  ProcessingRoute: ProcessingRoute,
-  ReportsRoute: ReportsRoute,
-  SalesheetRoute: SalesheetRoute,
-  SettingsRoute: SettingsRoute,
-  UsersRoute: UsersRoute,
-  WeighingRoute: WeighingRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

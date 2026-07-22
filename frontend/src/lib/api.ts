@@ -36,4 +36,11 @@ export const api = {
     request("/auth/login/", { method: "POST", body: JSON.stringify({ username, password }) }),
   logout: () => request("/auth/logout/", { method: "POST" }),
   me: () => request("/users/me/"),
+
+  listUsers: () => request("/users/"),
+  createUser: (data: Record<string, unknown>) =>
+    request("/users/", { method: "POST", body: JSON.stringify(data) }),
+  updateUser: (id: number, data: Record<string, unknown>) =>
+    request(`/users/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteUser: (id: number) => request(`/users/${id}/`, { method: "DELETE" }),
 };

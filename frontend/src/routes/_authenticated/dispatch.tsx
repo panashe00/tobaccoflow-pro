@@ -11,7 +11,7 @@ import { Scan, Printer, Truck } from "lucide-react";
 import { BALES, formatNum } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/dispatch")({
+export const Route = createFileRoute("/_authenticated/dispatch")({
   head: () => ({ meta: [{ title: "Dispatch · TIMS" }] }),
   component: Dispatch,
 });
