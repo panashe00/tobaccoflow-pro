@@ -246,6 +246,7 @@ function Users() {
         />
 
         <UserFormDialog
+          key={editingUser?.id ?? "new"}
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           editingUser={editingUser}

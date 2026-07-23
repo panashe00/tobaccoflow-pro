@@ -15,8 +15,8 @@ export const Route = createFileRoute("/")({ component: Login });
 function Login() {
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState("tmoyo");
-  const [password, setPassword] = useState("demo1234");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +83,7 @@ function Login() {
                 />
               </div>
             </div>
-            <div className="space-y-1.5">
+            {/* <div className="space-y-1.5">
               <Label className="text-xs">Branch</Label>
               <Select defaultValue="Harare">
                 <SelectTrigger>
@@ -94,7 +94,7 @@ function Login() {
                   {BRANCHES.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             <div className="flex items-center justify-between text-xs">
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox defaultChecked /> <span>Remember me</span>
