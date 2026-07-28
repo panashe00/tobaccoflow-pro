@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate, useRouteContext } from "@tanstack/react
 import {
   LayoutDashboard, FileText, Scale, Receipt, ScanLine, CheckCircle2,
   FileSpreadsheet, Truck, Settings, BarChart3, Users, LogOut, Search,
-  Bell, ChevronDown, Leaf,
+  Bell, ChevronDown, Leaf, Sprout,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

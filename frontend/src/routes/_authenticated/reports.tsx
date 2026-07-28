@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { AppShell, PageHeader } from "@/components/layout/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileSpreadsheet, FileText, Printer, BarChart3, AlertTriangle, Truck, Receipt, DollarSign } from "lucide-react";
+import { FileSpreadsheet, Rows4, FileText, Printer, BarChart3, AlertTriangle, Truck, Receipt, DollarSign } from "lucide-react";
 import { BRANCHES } from "@/lib/dummy-data";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({ meta: [{ title: "Reports · TIMS" }] }),
@@ -22,9 +24,13 @@ const REPORTS = [
   { name: "Dispatch Report", desc: "Truck loads, destinations, and timing", icon: Truck },
   { name: "Outstanding Verification Report", desc: "Tickets pending verification", icon: AlertTriangle },
   { name: "Financial Summary", desc: "Gross, net, USD/ZIG payout summary", icon: DollarSign },
+  { name: "Growers List", desc: "Active and inactive growers with contact info", icon: Rows4 },
 ];
 
 function Reports() {
+
+  const nav = useNavigate();
+
   return (
     <AppShell>
       <div className="p-6 max-w-[1400px] mx-auto">
@@ -57,17 +63,23 @@ function Reports() {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm">{r.name}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{r.desc}</div>
-                  <div className="flex gap-2 mt-3">
-                    <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} exported to Excel`)}>
-                      <FileSpreadsheet className="size-3.5" />Excel
+                  {r.name === "Growers List" ? (
+                    <Button size="sm" className="mt-3" onClick={() => nav({ to: "/growers" })}>
+                      View Growers List
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} exported to PDF`)}>
-                      <FileText className="size-3.5" />PDF
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} sent to printer`)}>
-                      <Printer className="size-3.5" />Print
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="flex gap-2 mt-3">
+                      <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} exported to Excel`)}>
+                        <FileSpreadsheet className="size-3.5" />Excel
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} exported to PDF`)}>
+                        <FileText className="size-3.5" />PDF
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} sent to printer`)}>
+                        <Printer className="size-3.5" />Print
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

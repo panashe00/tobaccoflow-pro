@@ -18,6 +18,7 @@ import { Route as AuthenticatedSalesheetRouteImport } from './routes/_authentica
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedProcessingRouteImport } from './routes/_authenticated/processing'
 import { Route as AuthenticatedPreProcessingRouteImport } from './routes/_authenticated/pre-processing'
+import { Route as AuthenticatedGrowersRouteImport } from './routes/_authenticated/growers'
 import { Route as AuthenticatedDispatchRouteImport } from './routes/_authenticated/dispatch'
 import { Route as AuthenticatedDeliveryNotesRouteImport } from './routes/_authenticated/delivery-notes'
 import { Route as AuthenticatedDeductionsRouteImport } from './routes/_authenticated/deductions'
@@ -68,6 +69,11 @@ const AuthenticatedPreProcessingRoute =
     path: '/pre-processing',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedGrowersRoute = AuthenticatedGrowersRouteImport.update({
+  id: '/growers',
+  path: '/growers',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDispatchRoute = AuthenticatedDispatchRouteImport.update({
   id: '/dispatch',
   path: '/dispatch',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/deductions': typeof AuthenticatedDeductionsRoute
   '/delivery-notes': typeof AuthenticatedDeliveryNotesRoute
   '/dispatch': typeof AuthenticatedDispatchRoute
+  '/growers': typeof AuthenticatedGrowersRoute
   '/pre-processing': typeof AuthenticatedPreProcessingRoute
   '/processing': typeof AuthenticatedProcessingRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/deductions': typeof AuthenticatedDeductionsRoute
   '/delivery-notes': typeof AuthenticatedDeliveryNotesRoute
   '/dispatch': typeof AuthenticatedDispatchRoute
+  '/growers': typeof AuthenticatedGrowersRoute
   '/pre-processing': typeof AuthenticatedPreProcessingRoute
   '/processing': typeof AuthenticatedProcessingRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/_authenticated/deductions': typeof AuthenticatedDeductionsRoute
   '/_authenticated/delivery-notes': typeof AuthenticatedDeliveryNotesRoute
   '/_authenticated/dispatch': typeof AuthenticatedDispatchRoute
+  '/_authenticated/growers': typeof AuthenticatedGrowersRoute
   '/_authenticated/pre-processing': typeof AuthenticatedPreProcessingRoute
   '/_authenticated/processing': typeof AuthenticatedProcessingRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/deductions'
     | '/delivery-notes'
     | '/dispatch'
+    | '/growers'
     | '/pre-processing'
     | '/processing'
     | '/reports'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/deductions'
     | '/delivery-notes'
     | '/dispatch'
+    | '/growers'
     | '/pre-processing'
     | '/processing'
     | '/reports'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/_authenticated/deductions'
     | '/_authenticated/delivery-notes'
     | '/_authenticated/dispatch'
+    | '/_authenticated/growers'
     | '/_authenticated/pre-processing'
     | '/_authenticated/processing'
     | '/_authenticated/reports'
@@ -250,6 +262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPreProcessingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/growers': {
+      id: '/_authenticated/growers'
+      path: '/growers'
+      fullPath: '/growers'
+      preLoaderRoute: typeof AuthenticatedGrowersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dispatch': {
       id: '/_authenticated/dispatch'
       path: '/dispatch'
@@ -286,6 +305,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDeductionsRoute: typeof AuthenticatedDeductionsRoute
   AuthenticatedDeliveryNotesRoute: typeof AuthenticatedDeliveryNotesRoute
   AuthenticatedDispatchRoute: typeof AuthenticatedDispatchRoute
+  AuthenticatedGrowersRoute: typeof AuthenticatedGrowersRoute
   AuthenticatedPreProcessingRoute: typeof AuthenticatedPreProcessingRoute
   AuthenticatedProcessingRoute: typeof AuthenticatedProcessingRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
@@ -300,6 +320,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDeductionsRoute: AuthenticatedDeductionsRoute,
   AuthenticatedDeliveryNotesRoute: AuthenticatedDeliveryNotesRoute,
   AuthenticatedDispatchRoute: AuthenticatedDispatchRoute,
+  AuthenticatedGrowersRoute: AuthenticatedGrowersRoute,
   AuthenticatedPreProcessingRoute: AuthenticatedPreProcessingRoute,
   AuthenticatedProcessingRoute: AuthenticatedProcessingRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,

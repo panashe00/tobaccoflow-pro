@@ -1,5 +1,7 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
 
+// USERS API
+// STARTS HERE
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -43,4 +45,15 @@ export const api = {
   updateUser: (id: number, data: Record<string, unknown>) =>
     request(`/users/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteUser: (id: number) => request(`/users/${id}/`, { method: "DELETE" }),
+
+
+ // ENDS HERE 
+ //  NOW GROWERS
+  listGrowers: (search?: string) =>
+    request(`/growers/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+  createGrower: (data: Record<string, unknown>) =>
+    request("/growers/", { method: "POST", body: JSON.stringify(data) }),
+  updateGrower: (id: number, data: Record<string, unknown>) =>
+    request(`/growers/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteGrower: (id: number) => request(`/growers/${id}/`, { method: "DELETE" }),
 };
