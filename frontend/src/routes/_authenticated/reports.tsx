@@ -25,6 +25,7 @@ const REPORTS = [
   { name: "Outstanding Verification Report", desc: "Tickets pending verification", icon: AlertTriangle },
   { name: "Financial Summary", desc: "Gross, net, USD/ZIG payout summary", icon: DollarSign },
   { name: "Growers List", desc: "Active and inactive growers with contact info", icon: Rows4 },
+  { name: "Transporters List", desc: "Active and inactive transporters with contact info", icon: Rows4 },
 ];
 
 function Reports() {
@@ -63,24 +64,28 @@ function Reports() {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm">{r.name}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{r.desc}</div>
-                  {r.name === "Growers List" ? (
-                    <Button size="sm" className="mt-3" onClick={() => nav({ to: "/growers" })}>
-                      View Growers List
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2 mt-3">
-                      <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} exported to Excel`)}>
-                        <FileSpreadsheet className="size-3.5" />Excel
+                  {r.name === "Growers List" || r.name === "Transporters List" ? (
+                      <Button
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => nav({ to: r.name === "Growers List" ? "/growers" : "/transporters" })}
+                      >
+                        {r.name === "Growers List" ? "View Growers List" : "View Transporters List"}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} exported to PDF`)}>
-                        <FileText className="size-3.5" />PDF
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} sent to printer`)}>
-                        <Printer className="size-3.5" />Print
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                     ) : (
+                      <div className="flex gap-2 mt-3">
+                        <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} exported to Excel`)}>
+                          <FileSpreadsheet className="size-3.5" />Excel
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} exported to PDF`)}>
+                          <FileText className="size-3.5" />PDF
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => toast.success(`${r.name} sent to printer`)}>
+                          <Printer className="size-3.5" />Print
+                        </Button>
+                      </div>
+                    )}
+                  </div>
               </CardContent>
             </Card>
           ))}

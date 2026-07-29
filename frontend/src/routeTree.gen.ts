@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWeighingRouteImport } from './routes/_authenticated/weighing'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedTransportersRouteImport } from './routes/_authenticated/transporters'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSalesheetRouteImport } from './routes/_authenticated/salesheet'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
@@ -43,6 +44,12 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedTransportersRoute =
+  AuthenticatedTransportersRouteImport.update({
+    id: '/transporters',
+    path: '/transporters',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthenticatedReportsRoute
   '/salesheet': typeof AuthenticatedSalesheetRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/transporters': typeof AuthenticatedTransportersRoute
   '/users': typeof AuthenticatedUsersRoute
   '/weighing': typeof AuthenticatedWeighingRoute
 }
@@ -123,6 +131,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/salesheet': typeof AuthenticatedSalesheetRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/transporters': typeof AuthenticatedTransportersRoute
   '/users': typeof AuthenticatedUsersRoute
   '/weighing': typeof AuthenticatedWeighingRoute
 }
@@ -140,6 +149,7 @@ export interface FileRoutesById {
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/salesheet': typeof AuthenticatedSalesheetRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/transporters': typeof AuthenticatedTransportersRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/weighing': typeof AuthenticatedWeighingRoute
 }
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/salesheet'
     | '/settings'
+    | '/transporters'
     | '/users'
     | '/weighing'
   fileRoutesByTo: FileRoutesByTo
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/salesheet'
     | '/settings'
+    | '/transporters'
     | '/users'
     | '/weighing'
   id:
@@ -188,6 +200,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports'
     | '/_authenticated/salesheet'
     | '/_authenticated/settings'
+    | '/_authenticated/transporters'
     | '/_authenticated/users'
     | '/_authenticated/weighing'
   fileRoutesById: FileRoutesById
@@ -225,6 +238,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/transporters': {
+      id: '/_authenticated/transporters'
+      path: '/transporters'
+      fullPath: '/transporters'
+      preLoaderRoute: typeof AuthenticatedTransportersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
@@ -311,6 +331,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSalesheetRoute: typeof AuthenticatedSalesheetRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedTransportersRoute: typeof AuthenticatedTransportersRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedWeighingRoute: typeof AuthenticatedWeighingRoute
 }
@@ -326,6 +347,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSalesheetRoute: AuthenticatedSalesheetRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedTransportersRoute: AuthenticatedTransportersRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedWeighingRoute: AuthenticatedWeighingRoute,
 }

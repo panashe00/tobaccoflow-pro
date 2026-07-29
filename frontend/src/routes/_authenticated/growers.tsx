@@ -155,6 +155,7 @@ function Growers() {
   const [q, setQ] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGrower, setEditingGrower] = useState<ApiGrower | null>(null);
+  const [formSession, setFormSession] = useState(0);
   const queryClient = useQueryClient();
 
   const { data: growers = [], isLoading } = useQuery<ApiGrower[]>({
@@ -171,7 +172,7 @@ function Growers() {
     onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to delete grower"),
   });
 
-  const openCreate = () => { setEditingGrower(null); setDialogOpen(true); };
+  const openCreate = () => { setEditingGrower(null); setFormSession((s) => s + 1); setDialogOpen(true); };
   const openEdit = (g: ApiGrower) => { setEditingGrower(g); setDialogOpen(true); };
 
   return (
@@ -184,7 +185,7 @@ function Growers() {
         />
 
         <GrowerFormDialog
-          key={editingGrower?.id ?? "new"}
+          key={editingGrower?.id ?? `new-${formSession}`} // force re-render when switching between edit and create
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           editingGrower={editingGrower}

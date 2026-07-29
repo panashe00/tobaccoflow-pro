@@ -56,4 +56,13 @@ export const api = {
   updateGrower: (id: number, data: Record<string, unknown>) =>
     request(`/growers/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteGrower: (id: number) => request(`/growers/${id}/`, { method: "DELETE" }),
+
+  // TRANSPORTERS
+  listTransporters: (search?: string) =>
+    request(`/transporters/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+  createTransporter: (data: Record<string, unknown>) =>
+    request("/transporters/", { method: "POST", body: JSON.stringify(data) }),
+  updateTransporter: (id: number, data: Record<string, unknown>) =>
+    request(`/transporters/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteTransporter: (id: number) => request(`/transporters/${id}/`, { method: "DELETE" }),
 };
