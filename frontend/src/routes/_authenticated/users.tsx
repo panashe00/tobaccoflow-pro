@@ -202,6 +202,7 @@ function Users() {
   const [q, setQ] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<ApiUser | null>(null);
+  const [formSession, setFormSession] = useState(0);
   const queryClient = useQueryClient();
 
   const { data: users = [], isLoading } = useQuery<ApiUser[]>({
@@ -233,7 +234,7 @@ function Users() {
       u.username.toLowerCase().includes(q.toLowerCase())
   );
 
-  const openCreate = () => { setEditingUser(null); setDialogOpen(true); };
+  const openCreate = () => { setEditingUser(null); setFormSession((s) => s + 1); setDialogOpen(true); };
   const openEdit = (u: ApiUser) => { setEditingUser(u); setDialogOpen(true); };
 
   return (
@@ -246,7 +247,7 @@ function Users() {
         />
 
         <UserFormDialog
-          key={editingUser?.id ?? "new"}
+          key={editingUser?.id ?? `new-${formSession}`}
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           editingUser={editingUser}

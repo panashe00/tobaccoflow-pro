@@ -65,4 +65,40 @@ export const api = {
   updateTransporter: (id: number, data: Record<string, unknown>) =>
     request(`/transporters/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteTransporter: (id: number) => request(`/transporters/${id}/`, { method: "DELETE" }),
+
+  // GRADES
+  listGrades: (search?: string) =>
+    request(`/grades/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+  createGrade: (data: Record<string, unknown>) =>
+    request("/grades/", { method: "POST", body: JSON.stringify(data) }),
+  updateGrade: (id: number, data: Record<string, unknown>) =>
+    request(`/grades/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteGrade: (id: number) => request(`/grades/${id}/`, { method: "DELETE" }),
+  uploadGradesCsv: async (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE}/grades/upload_csv/`, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    });
+    if (!res.ok) throw new ApiError("CSV upload failed", res.status);
+    return res.json();
+  },
+
+  // BUYERS
+  listBuyers: (search?: string) =>
+    request(`/buyers/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+  createBuyer: (data: Record<string, unknown>) =>
+    request("/buyers/", { method: "POST", body: JSON.stringify(data) }),
+  updateBuyer: (id: number, data: Record<string, unknown>) =>
+    request(`/buyers/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteBuyer: (id: number) => request(`/buyers/${id}/`, { method: "DELETE" }),
+  setCurrentBuyer: (id: number) => request(`/buyers/${id}/set_current/`, { method: "POST" }),
+  getCurrentBuyer: () => request("/buyers/current/"),
+
+  // DEDUCTIONS
+  listDeductionRules: () => request("/deduction-rules/"),
+  updateDeductionRule: (id: number, data: Record<string, unknown>) =>
+    request(`/deduction-rules/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
 };

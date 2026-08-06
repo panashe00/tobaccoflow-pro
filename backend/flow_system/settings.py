@@ -44,6 +44,9 @@ INSTALLED_APPS = [
     'users',
     'growers',
     'transporters',
+    'buyers',
+    'grades',
+    'deductions',
 ]
 
 MIDDLEWARE = [
