@@ -97,6 +97,14 @@ export const api = {
   setCurrentBuyer: (id: number) => request(`/buyers/${id}/set_current/`, { method: "POST" }),
   getCurrentBuyer: () => request("/buyers/current/"),
 
+  listBuyerGrades: (buyerId: number) => request(`/buyer-grades/?buyer=${buyerId}`),
+  createBuyerGrade: (buyerId: number, code: string) =>
+    request("/buyer-grades/", { method: "POST", body: JSON.stringify({ buyer: buyerId, code }) }),
+  updateBuyerGrade: (id: number, data: Record<string, unknown>) =>
+    request(`/buyer-grades/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteBuyerGrade: (id: number) => request(`/buyer-grades/${id}/`, { method: "DELETE" }),
+
+
   // DEDUCTIONS
   listDeductionRules: () => request("/deduction-rules/"),
   updateDeductionRule: (id: number, data: Record<string, unknown>) =>

@@ -130,46 +130,15 @@ function GradesTab() {
   );
 }
 
-// ---------- Buyers tab ----------
-
 type ApiBuyer = {
   id: number; name: string; code: string; contact_person: string | null;
-  contact: string | null; email: string | null; grade_list: string[];
+  contact: string | null; email: string | null; grade_count: number;
   is_active: boolean; is_current: boolean;
 };
 
-function BuyerGradeTagInput({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
-  const [draft, setDraft] = useState("");
+type ApiBuyerGrade = { id: number; buyer: number; code: string; is_active: boolean };
 
-  const addGrade = () => {
-    const code = draft.trim();
-    if (code && !value.includes(code)) onChange([...value, code]);
-    setDraft("");
-  };
-
-  return (
-    <div>
-      <div className="flex gap-2 mb-2">
-        <Input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addGrade(); } }}
-          placeholder="e.g. A1"
-          className="h-8 max-w-[140px]"
-        />
-        <Button type="button" size="sm" variant="outline" onClick={addGrade}>Add</Button>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {value.map((code) => (
-          <Badge key={code} variant="outline" className="gap-1">
-            {code}
-            <button type="button" onClick={() => onChange(value.filter((c) => c !== code))} className="text-muted-foreground hover:text-destructive">×</button>
-          </Badge>
-        ))}
-      </div>
-    </div>
-  );
-}
+// ---------- Buyer create/edit — name/code/contact only ----------
 
 function BuyerFormDialog({ open, onOpenChange, editingBuyer, onSaved }: {
   open: boolean; onOpenChange: (v: boolean) => void; editingBuyer: ApiBuyer | null; onSaved: () => void;
@@ -181,7 +150,6 @@ function BuyerFormDialog({ open, onOpenChange, editingBuyer, onSaved }: {
     contact_person: editingBuyer?.contact_person ?? "",
     contact: editingBuyer?.contact ?? "",
     email: editingBuyer?.email ?? "",
-    grades: editingBuyer?.grade_list ?? [] as string[],
   });
 
   const mutation = useMutation({
@@ -192,7 +160,7 @@ function BuyerFormDialog({ open, onOpenChange, editingBuyer, onSaved }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent>
         <DialogHeader><DialogTitle>{isEdit ? "Edit Buyer" : "Add Buyer"}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
@@ -200,11 +168,10 @@ function BuyerFormDialog({ open, onOpenChange, editingBuyer, onSaved }: {
           <div className="space-y-1.5"><Label className="text-xs">Contact Person</Label><Input value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} /></div>
           <div className="space-y-1.5"><Label className="text-xs">Contact</Label><Input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} /></div>
           <div className="space-y-1.5 col-span-2"><Label className="text-xs">Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-          <div className="space-y-1.5 col-span-2">
-            <Label className="text-xs">Buyer's Grades</Label>
-            <BuyerGradeTagInput value={form.grades} onChange={(g) => setForm({ ...form, grades: g })} />
-          </div>
         </div>
+        {!isEdit && (
+          <p className="text-xs text-muted-foreground">Grades are added afterwards from the buyer's row in the table.</p>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
@@ -216,11 +183,98 @@ function BuyerFormDialog({ open, onOpenChange, editingBuyer, onSaved }: {
   );
 }
 
+// ---------- Buyer grades manager — add form + table, scoped to one buyer ----------
+
+function BuyerGradesDialog({ buyer, open, onOpenChange }: {
+  buyer: ApiBuyer; open: boolean; onOpenChange: (v: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [newCode, setNewCode] = useState("");
+
+  const { data: grades = [], isLoading } = useQuery<ApiBuyerGrade[]>({
+    queryKey: ["buyer-grades", buyer.id],
+    queryFn: () => api.listBuyerGrades(buyer.id),
+    enabled: open,
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["buyer-grades", buyer.id] });
+    queryClient.invalidateQueries({ queryKey: ["buyers"] }); // refresh grade_count
+  };
+
+  const addGrade = useMutation({
+    mutationFn: () => api.createBuyerGrade(buyer.id, newCode.trim()),
+    onSuccess: () => { setNewCode(""); invalidate(); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to add grade"),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: (g: ApiBuyerGrade) => api.updateBuyerGrade(g.id, { is_active: !g.is_active }),
+    onSuccess: invalidate,
+  });
+
+  const deleteGrade = useMutation({
+    mutationFn: (id: number) => api.deleteBuyerGrade(id),
+    onSuccess: invalidate,
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>{buyer.name} — Grades</DialogTitle></DialogHeader>
+
+        <div className="flex gap-2">
+          <Input
+            value={newCode}
+            onChange={(e) => setNewCode(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newCode.trim()) { e.preventDefault(); addGrade.mutate(); }
+            }}
+            placeholder="e.g. A1"
+            className="h-9"
+          />
+          <Button size="sm" onClick={() => addGrade.mutate()} disabled={!newCode.trim() || addGrade.isPending}>
+            {addGrade.isPending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}Add
+          </Button>
+        </div>
+
+        <div className="border rounded-md max-h-80 overflow-y-auto">
+          <Table>
+            <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Active</TableHead><TableHead></TableHead></TableRow></TableHeader>
+            <TableBody>
+              {isLoading && <TableRow><TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-6">Loading…</TableCell></TableRow>}
+              {!isLoading && grades.length === 0 && (
+                <TableRow><TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-6">No grades added yet.</TableCell></TableRow>
+              )}
+              {grades.map((g) => (
+                <TableRow key={g.id}>
+                  <TableCell className="font-mono">{g.code}</TableCell>
+                  <TableCell><Switch checked={g.is_active} onCheckedChange={() => toggleActive.mutate(g)} /></TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteGrade.mutate(g.id)}>Remove</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------- Buyers tab ----------
+
 function BuyersTab() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBuyer, setEditingBuyer] = useState<ApiBuyer | null>(null);
   const [formSession, setFormSession] = useState(0);
+  const [gradesDialogBuyer, setGradesDialogBuyer] = useState<ApiBuyer | null>(null);
 
   const { data: buyers = [], isLoading } = useQuery<ApiBuyer[]>({ queryKey: ["buyers"], queryFn: () => api.listBuyers() });
 
@@ -250,6 +304,13 @@ function BuyersTab() {
           open={dialogOpen} onOpenChange={setDialogOpen} editingBuyer={editingBuyer}
           onSaved={() => queryClient.invalidateQueries({ queryKey: ["buyers"] })}
         />
+        {gradesDialogBuyer && (
+          <BuyerGradesDialog
+            buyer={gradesDialogBuyer}
+            open={!!gradesDialogBuyer}
+            onOpenChange={(v) => !v && setGradesDialogBuyer(null)}
+          />
+        )}
         <Table>
           <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Code</TableHead><TableHead>Contact</TableHead><TableHead>Grades</TableHead><TableHead>Current</TableHead><TableHead>Active</TableHead><TableHead></TableHead></TableRow></TableHeader>
           <TableBody>
@@ -259,7 +320,11 @@ function BuyersTab() {
                 <TableCell className="font-medium">{b.name}</TableCell>
                 <TableCell className="font-mono text-xs">{b.code}</TableCell>
                 <TableCell className="text-sm">{b.contact_person ?? "—"}</TableCell>
-                <TableCell><div className="flex flex-wrap gap-1">{b.grade_list.map((c) => <Badge key={c} variant="outline">{c}</Badge>)}</div></TableCell>
+                <TableCell>
+                  <Button variant="outline" size="sm" onClick={() => setGradesDialogBuyer(b)}>
+                    {b.grade_count} {b.grade_count === 1 ? "grade" : "grades"}
+                  </Button>
+                </TableCell>
                 <TableCell>
                   {b.is_current
                     ? <Badge className="bg-success/15 text-success border-success/30">Current</Badge>

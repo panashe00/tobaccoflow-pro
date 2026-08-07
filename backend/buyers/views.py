@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from users.permissions import IsAdminOrReadOnly
-from .models import Buyer
-from .serializers import BuyerSerializer
+from .models import Buyer, BuyerGrade
+from .serializers import BuyerSerializer, BuyerGradeSerializer
 
 
 class BuyerViewSet(viewsets.ModelViewSet):
@@ -30,3 +30,14 @@ class BuyerViewSet(viewsets.ModelViewSet):
         buyer.is_current = True
         buyer.save(update_fields=['is_current'])
         return Response(BuyerSerializer(buyer).data)
+
+class BuyerGradeViewSet(viewsets.ModelViewSet):
+    serializer_class = BuyerGradeSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        qs = BuyerGrade.objects.all()
+        buyer_id = self.request.query_params.get('buyer')
+        if buyer_id:
+            qs = qs.filter(buyer_id=buyer_id)
+        return qs
