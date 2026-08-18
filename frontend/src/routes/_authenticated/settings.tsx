@@ -404,6 +404,77 @@ function DeductionsTab() {
   );
 }
 
+
+// ---------- Sale Date and Exchange Rate tab (single values) ----------
+
+type ApiSaleDate = { id: number; date: string; exchange_rate: string; is_open: boolean };
+
+function SaleDateCard() {
+  const queryClient = useQueryClient();
+  const { data: current, isLoading } = useQuery<ApiSaleDate | null>({
+    queryKey: ["sale-date-current"],
+    queryFn: api.getCurrentSaleDate,
+  });
+  const [date, setDate] = useState("");
+  const [rate, setRate] = useState("");
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["sale-date-current"] });
+
+  const openMutation = useMutation({
+    mutationFn: () => api.openSaleDate(date, parseFloat(rate)),
+    onSuccess: () => { toast.success("Sale date opened"); invalidate(); setDate(""); setRate(""); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to open sale date"),
+  });
+
+  const closeMutation = useMutation({
+    mutationFn: () => api.closeSaleDate(),
+    onSuccess: () => { toast.success("Sale date closed"); invalidate(); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to close sale date"),
+  });
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-sm">Sale Date</CardTitle></CardHeader>
+      <CardContent className="space-y-4 max-w-2xl">
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : current ? (
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <div>
+              <div className="text-sm font-medium font-mono">{current.date}</div>
+              <div className="text-xs text-muted-foreground">Exchange Rate: {current.exchange_rate}</div>
+            </div>
+            <Badge className="bg-success/15 text-success border-success/30">Open</Badge>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No sale date is currently open.</p>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Date</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="font-mono" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">USD/ZIG Exchange Rate</Label>
+            <Input type="number" step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} className="font-mono" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={() => openMutation.mutate()} disabled={!date || !rate || openMutation.isPending}>
+            {current ? "Open New Sale Date" : "Open Sale Date"}
+          </Button>
+          {current && (
+            <Button variant="outline" onClick={() => closeMutation.mutate()} disabled={closeMutation.isPending}>
+              Close Sale Date
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ---------- Main Settings component ----------
 
 function Settings() {
@@ -424,14 +495,7 @@ function Settings() {
           </TabsList>
 
           <TabsContent value="general">
-            <Card>
-              <CardHeader><CardTitle className="text-sm">Daily Operations</CardTitle></CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4 max-w-2xl">
-                <div className="space-y-1.5"><Label className="text-xs">Sale Date</Label><Input type="date" defaultValue={SALE_DATE} className="font-mono" /></div>
-                <div className="space-y-1.5"><Label className="text-xs">USD/ZIG Exchange Rate</Label><Input type="number" step="0.01" defaultValue={EXCHANGE_RATE} className="font-mono" /></div>
-                <div className="col-span-2"><Button onClick={() => toast.success("Settings saved")}>Save Changes</Button></div>
-              </CardContent>
-            </Card>
+            <SaleDateCard />
           </TabsContent>
 
           <TabsContent value="grades"><GradesTab /></TabsContent>

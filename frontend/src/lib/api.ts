@@ -109,4 +109,19 @@ export const api = {
   listDeductionRules: () => request("/deduction-rules/"),
   updateDeductionRule: (id: number, data: Record<string, unknown>) =>
     request(`/deduction-rules/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+
+
+  //DELIVERY NOTES
+  getCurrentSaleDate: () => request("/sale-dates/current/"),
+  openSaleDate: (date: string, exchange_rate: number) =>
+    request("/sale-dates/open/", { method: "POST", body: JSON.stringify({ date, exchange_rate }) }),
+  closeSaleDate: () => request("/sale-dates/close/", { method: "POST" }),
+
+  lookupGrower: (number: string) => request(`/growers/lookup/?number=${encodeURIComponent(number)}`),
+  searchTransporters: (query: string) => request(`/transporters/?search=${encodeURIComponent(query)}`),
+
+  listDeliveryNotes: (search?: string) =>
+    request(`/delivery-notes/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+  createDeliveryNote: (data: Record<string, unknown>) =>
+    request("/delivery-notes/", { method: "POST", body: JSON.stringify(data) }),
 };

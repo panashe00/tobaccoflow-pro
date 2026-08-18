@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'buyers',
     'grades',
     'deductions',
+    'saledates',
+    'deliverynotes',
 ]
 
 MIDDLEWARE = [
