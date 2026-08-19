@@ -9,8 +9,6 @@ BRANCH_CODES = {
     'Karoi': 'KAR',
     'Mvurwi': 'MVU',
     'Rusape': 'RUS',
-    'Marondera': 'MAR',
-    'Bindura': 'BIN',
 }
 
 

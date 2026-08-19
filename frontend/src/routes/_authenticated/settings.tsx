@@ -417,11 +417,12 @@ function SaleDateCard() {
   });
   const [date, setDate] = useState("");
   const [rate, setRate] = useState("");
+  const [lateRate, setLateRate] = useState("");
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["sale-date-current"] });
 
   const openMutation = useMutation({
-    mutationFn: () => api.openSaleDate(date, parseFloat(rate)),
+    mutationFn: () => api.openSaleDate(date, rate ? parseFloat(rate) : undefined),
     onSuccess: () => { toast.success("Sale date opened"); invalidate(); setDate(""); setRate(""); },
     onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to open sale date"),
   });
@@ -432,6 +433,12 @@ function SaleDateCard() {
     onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to close sale date"),
   });
 
+  const setRateMutation = useMutation({
+    mutationFn: () => api.setExchangeRate(parseFloat(lateRate)),
+    onSuccess: () => { toast.success("Exchange rate set"); invalidate(); setLateRate(""); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to set exchange rate"),
+  });
+
   return (
     <Card>
       <CardHeader><CardTitle className="text-sm">Sale Date</CardTitle></CardHeader>
@@ -439,12 +446,27 @@ function SaleDateCard() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : current ? (
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div>
-              <div className="text-sm font-medium font-mono">{current.date}</div>
-              <div className="text-xs text-muted-foreground">Exchange Rate: {current.exchange_rate}</div>
+          <div className="rounded-md border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium font-mono">{current.date}</div>
+                <div className="text-xs text-muted-foreground">
+                  Exchange Rate: {current.exchange_rate ?? "Not yet set"}
+                </div>
+              </div>
+              <Badge className="bg-success/15 text-success border-success/30">Open</Badge>
             </div>
-            <Badge className="bg-success/15 text-success border-success/30">Open</Badge>
+            {!current.exchange_rate && (
+              <div className="flex gap-2 pt-2 border-t">
+                <Input
+                  type="number" step="0.01" placeholder="Enter rate once published"
+                  value={lateRate} onChange={(e) => setLateRate(e.target.value)} className="font-mono h-9"
+                />
+                <Button size="sm" onClick={() => setRateMutation.mutate()} disabled={!lateRate || setRateMutation.isPending}>
+                  Set Rate
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">No sale date is currently open.</p>
@@ -456,12 +478,12 @@ function SaleDateCard() {
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="font-mono" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">USD/ZIG Exchange Rate</Label>
-            <Input type="number" step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} className="font-mono" />
+            <Label className="text-xs">USD/ZIG Exchange Rate (optional)</Label>
+            <Input type="number" step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} className="font-mono" placeholder="Add later if not yet published" />
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => openMutation.mutate()} disabled={!date || !rate || openMutation.isPending}>
+          <Button onClick={() => openMutation.mutate()} disabled={!date || openMutation.isPending}>
             {current ? "Open New Sale Date" : "Open Sale Date"}
           </Button>
           {current && (

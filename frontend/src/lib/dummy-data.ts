@@ -1,4 +1,4 @@
-export const BRANCHES = ["Harare", "Karoi", "Mvurwi", "Rusape", "Marondera", "Bindura"];
+export const BRANCHES = ["Harare", "Karoi", "Mvurwi", "Rusape"];
 
 export const GROWERS = [
   { number: "GR-2024-0142", name: "Tendai Moyo", region: "Mashonaland Central" },

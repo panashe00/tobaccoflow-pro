@@ -248,13 +248,16 @@ function DeliveryNotes() {
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search D-Note, grower…" className="pl-8" />
               </div>
-              <div className="text-xs text-muted-foreground">{notes.length} records</div>
+              <div className="text-xs text-muted-foreground">
+                {q ? `${notes.length} results` : `${notes.length} pending D-Notes for the open sale date`}
+              </div>
             </div>
             <div className="border rounded-md overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>D-Note</TableHead>
+                    <TableHead>Sale Date</TableHead>
                     <TableHead>Grower #</TableHead>
                     <TableHead>Grower Name</TableHead>
                     <TableHead>Transporter</TableHead>
@@ -267,14 +270,15 @@ function DeliveryNotes() {
                 </TableHeader>
                 <TableBody>
                   {isLoading && (
-                    <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">Loading…</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-8">Loading…</TableCell></TableRow>
                   )}
                   {!isLoading && notes.length === 0 && (
-                    <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">No delivery notes found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-8">No delivery notes found.</TableCell></TableRow>
                   )}
                   {notes.map((d) => (
                     <TableRow key={d.id}>
                       <TableCell className="font-mono text-xs">{d.dn_number}</TableCell>
+                      <TableCell className="font-mono text-xs">{d.sale_date_display}</TableCell>
                       <TableCell className="font-mono text-xs">{d.grower_number}</TableCell>
                       <TableCell>{d.grower_name}</TableCell>
                       <TableCell className="text-muted-foreground">{d.transporter_name ?? "—"}</TableCell>

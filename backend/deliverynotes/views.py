@@ -16,4 +16,11 @@ class DeliveryNoteViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.branches:
             qs = qs.filter(branch__in=user.branches)
+
+        # Only apply the "current sale date + pending" default when not searching.
+        # A search should surface matches across all sale dates and statuses.
+        search = self.request.query_params.get('search')
+        if not search:
+            qs = qs.filter(sale_date__is_open=True, status='pending')
+
         return qs

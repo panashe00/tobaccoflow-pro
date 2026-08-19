@@ -39,13 +39,13 @@ class DeliveryNoteSerializer(serializers.ModelSerializer):
         request = self.context['request']
         user = request.user
 
-        sale_date = SaleDate.objects.filter(is_open=True).first()
-        if not sale_date:
-            raise serializers.ValidationError("No sale date is currently open. Ask an admin to open one.")
-
         if not user.branches:
             raise serializers.ValidationError("You have no branch assigned. Contact an admin.")
         branch = user.branches[0]
+
+        sale_date = SaleDate.objects.filter(branch=branch, is_open=True).first()
+        if not sale_date:
+            raise serializers.ValidationError(f"No sale date is currently open for {branch}. Ask an admin to open one.")
 
         with transaction.atomic():
             counter, _ = BranchCounter.objects.select_for_update().get_or_create(branch=branch)

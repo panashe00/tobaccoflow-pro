@@ -3,8 +3,9 @@ from users.models import User
 
 
 class SaleDate(models.Model):
-    date = models.DateField(unique=True)
-    exchange_rate = models.DecimalField(max_digits=12, decimal_places=4)
+    branch = models.CharField(max_length=20, choices=User.BRANCH_CHOICES)
+    date = models.DateField()
+    exchange_rate = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
     is_open = models.BooleanField(default=False)
 
     opened_at = models.DateTimeField(null=True, blank=True)
@@ -15,6 +16,7 @@ class SaleDate(models.Model):
     class Meta:
         db_table = 'sale_dates'
         ordering = ['-date']
+        unique_together = ('branch', 'date')
 
     def __str__(self):
-        return str(self.date)
+        return f"{self.branch} — {self.date}"

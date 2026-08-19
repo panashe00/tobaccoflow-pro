@@ -113,7 +113,7 @@ export const api = {
 
   //DELIVERY NOTES
   getCurrentSaleDate: () => request("/sale-dates/current/"),
-  openSaleDate: (date: string, exchange_rate: number) =>
+  openSaleDate: (date: string, exchange_rate?: number) =>
     request("/sale-dates/open/", { method: "POST", body: JSON.stringify({ date, exchange_rate }) }),
   closeSaleDate: () => request("/sale-dates/close/", { method: "POST" }),
 
@@ -124,4 +124,6 @@ export const api = {
     request(`/delivery-notes/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
   createDeliveryNote: (data: Record<string, unknown>) =>
     request("/delivery-notes/", { method: "POST", body: JSON.stringify(data) }),
+  setExchangeRate: (exchange_rate: number) =>
+    request("/sale-dates/set_exchange_rate/", { method: "POST", body: JSON.stringify({ exchange_rate }) }),
 };
