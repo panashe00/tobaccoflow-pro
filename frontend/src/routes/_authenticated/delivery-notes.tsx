@@ -85,6 +85,7 @@ function CreateDeliveryNoteDialog({ open, onOpenChange, saleDate, onCreated }: {
   const [bales, setBales] = useState("");
   const [remarks, setRemarks] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [conflict, setConflict] = useState<{ dn_number: string; id: number; number_of_bales: number } | null>(null);
 
   const lookupGrower = async () => {
     if (!growerNumber.trim()) { setGrower(null); setGrowerNotFound(false); return; }
@@ -113,7 +114,26 @@ function CreateDeliveryNoteDialog({ open, onOpenChange, saleDate, onCreated }: {
       setConfirmOpen(false);
       onOpenChange(false);
     },
-    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to create Delivery Note"),
+    onError: (err) => {
+      if (err instanceof ApiError && err.status === 409 && err.body?.existing_delivery_note) {
+        const existing = err.body.existing_delivery_note;
+        setConfirmOpen(false);
+        setConflict({ dn_number: existing.dn_number, id: existing.id, number_of_bales: existing.number_of_bales });
+      } else {
+        toast.error(err instanceof ApiError ? err.message : "Failed to create Delivery Note");
+      }
+    },
+  });
+
+  const addBalesMutation = useMutation({
+    mutationFn: () => api.addBalesToDeliveryNote(conflict!.id, parseInt(bales, 10)),
+    onSuccess: () => {
+      toast.success(`Added ${bales} bales to ${conflict!.dn_number}`);
+      onCreated();
+      setConflict(null);
+      onOpenChange(false);
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to add bales"),
   });
 
   const canSubmit = !!grower && !!bales && parseInt(bales, 10) > 0 && !!dateReceived;
@@ -202,6 +222,26 @@ function CreateDeliveryNoteDialog({ open, onOpenChange, saleDate, onCreated }: {
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>Back</Button>
             <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
               {mutation.isPending && <Loader2 className="size-4 animate-spin" />}Confirm & Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+      <Dialog open={!!conflict} onOpenChange={(v) => !v && setConflict(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Grower already has a Delivery Note</DialogTitle>
+            <DialogDescription>
+              {grower ? `${grower.first_name} ${grower.last_name}` : "This grower"} already has {conflict?.dn_number} for the current sale date, with {conflict?.number_of_bales} bales recorded.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm">Would you like to add these {bales} bales to {conflict?.dn_number}, or go back and correct your capture?</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConflict(null)}>Go Back & Correct</Button>
+            <Button onClick={() => addBalesMutation.mutate()} disabled={addBalesMutation.isPending}>
+              {addBalesMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+              Add to {conflict?.dn_number}
             </Button>
           </DialogFooter>
         </DialogContent>

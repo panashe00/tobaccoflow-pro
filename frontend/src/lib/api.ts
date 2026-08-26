@@ -4,29 +4,25 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
 // STARTS HERE
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  body?: any;
+  constructor(message: string, status: number, body?: any) {
     super(message);
     this.status = status;
+    this.body = body;
   }
 }
 
 async function request(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
-    credentials: "include", // sends/receives the httpOnly cookies
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...options.headers },
   });
 
   if (!res.ok) {
-    let message = "Something went wrong";
-    try {
-      const data = await res.json();
-      message = data.detail ?? message;
-    } catch {}
-    throw new ApiError(message, res.status);
+    let body: any = null;
+    try { body = await res.json(); } catch {}
+    throw new ApiError(body?.detail ?? "Something went wrong", res.status, body);
   }
 
   if (res.status === 204) return null;
@@ -120,6 +116,8 @@ export const api = {
   lookupGrower: (number: string) => request(`/growers/lookup/?number=${encodeURIComponent(number)}`),
   searchTransporters: (query: string) => request(`/transporters/?search=${encodeURIComponent(query)}`),
 
+  addBalesToDeliveryNote: (id: number, number_of_bales: number) =>
+    request(`/delivery-notes/${id}/add_bales/`, { method: "POST", body: JSON.stringify({ number_of_bales }) }),
   listDeliveryNotes: (search?: string) =>
     request(`/delivery-notes/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
   createDeliveryNote: (data: Record<string, unknown>) =>
