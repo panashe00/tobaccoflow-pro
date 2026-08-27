@@ -27,4 +27,5 @@ urlpatterns = [
     path('api/', include('deductions.urls')),
     path('api/', include('saledates.urls')),
     path('api/', include('deliverynotes.urls')),
+    path('api/', include('weighing.urls')),
 ]

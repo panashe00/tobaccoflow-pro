@@ -124,4 +124,31 @@ export const api = {
     request("/delivery-notes/", { method: "POST", body: JSON.stringify(data) }),
   setExchangeRate: (exchange_rate: number) =>
     request("/sale-dates/set_exchange_rate/", { method: "POST", body: JSON.stringify({ exchange_rate }) }),
+
+
+  //WEIGHING
+  listScales: () => request("/scales/"),
+  createScale: (data: Record<string, unknown>) => 
+    request("/scales/", { method: "POST", body: JSON.stringify(data) }),
+  updateScale: (id: number, data: Record<string, unknown>) => 
+    request(`/scales/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteScale: (id: number) => request(`/scales/${id}/`, { method: "DELETE" }),
+  getScaleMass: (id: number) => request(`/scales/${id}/read_mass/`),
+
+  listHessianCodes: () => request("/hessian-codes/"),
+  createHessianCode: (data: Record<string, unknown>) => 
+    request("/hessian-codes/", { method: "POST", body: JSON.stringify(data) }),
+  updateHessianCode: (id: number, data: Record<string, unknown>) => 
+    request(`/hessian-codes/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteHessianCode: (id: number) => request(`/hessian-codes/${id}/`, { method: "DELETE" }),
+
+  listTicketBooks: () => request("/ticket-books/"),
+  getCurrentTicketBook: () => request("/ticket-books/current/"),
+  createTicketBook: (data: Record<string, unknown>) => request("/ticket-books/", { method: "POST", body: JSON.stringify(data) }),
+  updateTicketBook: (id: number, data: Record<string, unknown>) => request(`/ticket-books/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+
+  listPendingDeliveryNotesForWeighing: (search?: string) =>
+    request(`/bales/pending-delivery-notes/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+  listBalesForDeliveryNote: (dnId: number) => request(`/bales/?delivery_note=${dnId}`),
+  createBale: (data: Record<string, unknown>) => request("/bales/", { method: "POST", body: JSON.stringify(data) }),
 };

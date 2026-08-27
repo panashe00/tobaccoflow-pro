@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'deductions',
     'saledates',
     'deliverynotes',
+    'weighing',
 ]
 
 MIDDLEWARE = [

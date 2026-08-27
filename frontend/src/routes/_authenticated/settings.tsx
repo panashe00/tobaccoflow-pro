@@ -492,6 +492,147 @@ function SaleDateCard() {
   );
 }
 
+// ----------- Scales tab (permanent list of scales) ----------
+type ApiScale = { id: number; name: string; branch: string; is_active: boolean };
+
+function ScalesTab() {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState("");
+  const { data: scales = [] } = useQuery<ApiScale[]>({ queryKey: ["scales"], queryFn: api.listScales });
+
+  const createScale = useMutation({
+    mutationFn: () => api.createScale({ name }),
+    onSuccess: () => { toast.success("Scale added"); queryClient.invalidateQueries({ queryKey: ["scales"] }); setName(""); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to add scale"),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: (s: ApiScale) => api.updateScale(s.id, { is_active: !s.is_active }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scales"] }),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-sm">Scales</CardTitle>
+        <div className="flex gap-2">
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Scale 1" className="h-8 w-40" />
+          <Button size="sm" onClick={() => createScale.mutate()} disabled={!name.trim()}><Plus className="size-3.5" />Add</Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Branch</TableHead><TableHead>Active</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {scales.map((s) => (
+              <TableRow key={s.id}>
+                <TableCell>{s.name}</TableCell>
+                <TableCell>{s.branch}</TableCell>
+                <TableCell><Switch checked={s.is_active} onCheckedChange={() => toggleActive.mutate(s)} /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+
+// ---------- Hessian Codes tab (permanent list of codes) ----------
+type ApiHessianCode = { id: number; code: string; is_active: boolean };
+
+function HessianCodesTab() {
+  const queryClient = useQueryClient();
+  const [code, setCode] = useState("");
+  const { data: codes = [] } = useQuery<ApiHessianCode[]>({ queryKey: ["hessian-codes"], queryFn: api.listHessianCodes });
+
+  const createCode = useMutation({
+    mutationFn: () => api.createHessianCode({ code: code.trim().toUpperCase() }),
+    onSuccess: () => { toast.success("Hessian code added"); queryClient.invalidateQueries({ queryKey: ["hessian-codes"] }); setCode(""); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to add code"),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: (h: ApiHessianCode) => api.updateHessianCode(h.id, { is_active: !h.is_active }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["hessian-codes"] }),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-sm">Hessian Codes</CardTitle>
+        <div className="flex gap-2">
+          <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. HS" maxLength={5} className="h-8 w-24" />
+          <Button size="sm" onClick={() => createCode.mutate()} disabled={code.trim().length < 2}><Plus className="size-3.5" />Add</Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Active</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {codes.map((h) => (
+              <TableRow key={h.id}>
+                <TableCell className="font-mono">{h.code}</TableCell>
+                <TableCell><Switch checked={h.is_active} onCheckedChange={() => toggleActive.mutate(h)} /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+// --------- Ticket Books tab (permanent list of books) ----------
+type ApiTicketBook = { id: number; branch: string; start_number: number; end_number: number; next_number: number; is_active: boolean; remaining: number };
+
+function TicketBooksTab() {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({ start_number: "", end_number: "" });
+  const { data: books = [] } = useQuery<ApiTicketBook[]>({ queryKey: ["ticket-books"], queryFn: api.listTicketBooks });
+
+  const createBook = useMutation({
+    mutationFn: () => api.createTicketBook({ start_number: parseInt(form.start_number), end_number: parseInt(form.end_number) }),
+    onSuccess: () => { toast.success("Ticket book added"); queryClient.invalidateQueries({ queryKey: ["ticket-books"] }); setForm({ start_number: "", end_number: "" }); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to add ticket book"),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: (b: ApiTicketBook) => api.updateTicketBook(b.id, { is_active: !b.is_active }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ticket-books"] }),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-sm">Ticket Books</CardTitle>
+        <div className="flex gap-2">
+          <Input type="number" placeholder="Start" value={form.start_number} onChange={(e) => setForm({ ...form, start_number: e.target.value })} className="h-8 w-28 font-mono" />
+          <Input type="number" placeholder="End" value={form.end_number} onChange={(e) => setForm({ ...form, end_number: e.target.value })} className="h-8 w-28 font-mono" />
+          <Button size="sm" onClick={() => createBook.mutate()} disabled={!form.start_number || !form.end_number}><Plus className="size-3.5" />Add</Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader><TableRow><TableHead>Branch</TableHead><TableHead>Range</TableHead><TableHead>Next</TableHead><TableHead>Remaining</TableHead><TableHead>Active</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {books.map((b) => (
+              <TableRow key={b.id}>
+                <TableCell>{b.branch}</TableCell>
+                <TableCell className="font-mono text-xs">{b.start_number} – {b.end_number}</TableCell>
+                <TableCell className="font-mono">{b.next_number}</TableCell>
+                <TableCell className="font-mono">{b.remaining}</TableCell>
+                <TableCell><Switch checked={b.is_active} onCheckedChange={() => toggleActive.mutate(b)} /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ---------- Main Settings component ----------
 
 function Settings() {
@@ -508,7 +649,9 @@ function Settings() {
             <TabsTrigger value="deductions">Deductions</TabsTrigger>
             <TabsTrigger value="branches">Branches</TabsTrigger>
             <TabsTrigger value="permissions">Permissions</TabsTrigger>
-            <TabsTrigger value="barcode">Barcode</TabsTrigger>
+            <TabsTrigger value="scales">Scales</TabsTrigger>
+            <TabsTrigger value="hessian-codes">Hessian Codes</TabsTrigger>
+            <TabsTrigger value="ticket-books">Ticket Books</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -567,17 +710,10 @@ function Settings() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="barcode">
-            <Card>
-              <CardHeader><CardTitle className="text-sm">Barcode Generation</CardTitle></CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4 max-w-2xl">
-                <div className="space-y-1.5"><Label className="text-xs">Prefix</Label><Input defaultValue="BC" className="font-mono" /></div>
-                <div className="space-y-1.5"><Label className="text-xs">Sequence Start</Label><Input defaultValue="8801234500" className="font-mono" /></div>
-                <div className="space-y-1.5"><Label className="text-xs">Symbology</Label><Input defaultValue="Code 128" /></div>
-                <div className="space-y-1.5"><Label className="text-xs">Length</Label><Input type="number" defaultValue={12} className="font-mono" /></div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <TabsContent value="scales"><ScalesTab /></TabsContent>
+          <TabsContent value="hessian-codes"><HessianCodesTab /></TabsContent>
+          <TabsContent value="ticket-books"><TicketBooksTab /></TabsContent>
+
         </Tabs>
       </div>
     </AppShell>
