@@ -13,7 +13,6 @@ from .serializers import (
     BaleSerializer, WeighingDeliveryNoteSerializer,
 )
 
-
 class ScaleViewSet(viewsets.ModelViewSet):
     queryset = Scale.objects.all()
     serializer_class = ScaleSerializer
@@ -25,6 +24,13 @@ class ScaleViewSet(viewsets.ModelViewSet):
         if user.branches:
             qs = qs.filter(branch__in=user.branches)
         return qs
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        branch = user.branches[0] if user.branches else None
+        if not branch:
+            raise serializers.ValidationError("You have no branch assigned.")
+        serializer.save(branch=branch)
 
     @action(detail=True, methods=['get'])
     def read_mass(self, request, pk=None):

@@ -116,7 +116,7 @@ function Weighing() {
         lot_number: parseInt(lotNumber, 10),
         hessian_code: hessian,
         mass: parseInt(mass, 10),
-        ticket_number: parseInt(ticketNumber, 10),
+        barcode: ticketNumber, // raw scan, including the Code 39 check character
         scale: selectedScale!.id,
       }),
     onSuccess: () => {

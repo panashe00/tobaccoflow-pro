@@ -34,9 +34,9 @@ class HessianCode(models.Model):
 
 class TicketBook(models.Model):
     branch = models.CharField(max_length=20, choices=User.BRANCH_CHOICES)
-    start_number = models.PositiveIntegerField()
-    end_number = models.PositiveIntegerField()
-    next_number = models.PositiveIntegerField(blank=True)
+    start_number = models.CharField(max_length=20)
+    end_number = models.CharField(max_length=20)
+    next_number = models.CharField(max_length=20, blank=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -60,7 +60,8 @@ class Bale(models.Model):
     lot_number = models.PositiveIntegerField()
     hessian_code = models.CharField(max_length=5)
     mass = models.PositiveIntegerField(help_text="Whole kilograms")
-    ticket_number = models.PositiveIntegerField(unique=True)
+    ticket_number = models.CharField(max_length=20, unique=True, help_text="Base ticket number, without the Code 39 check character.")
+    scanned_barcode = models.CharField(max_length=25, blank=True, null=True, help_text="Raw scan, including the check character, kept for audit.")
     scale = models.ForeignKey(Scale, on_delete=models.SET_NULL, null=True)
     captured_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

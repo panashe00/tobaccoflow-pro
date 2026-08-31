@@ -3,12 +3,14 @@ from rest_framework import serializers
 from deliverynotes.models import DeliveryNote
 from saledates.models import SaleDate
 from .models import Scale, HessianCode, TicketBook, Bale
+from .barcodes import split_and_validate_scan
 
 
 class ScaleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Scale
         fields = ['id', 'name', 'branch', 'is_active']
+        read_only_fields = ['id', 'branch']
 
 
 class HessianCodeSerializer(serializers.ModelSerializer):
@@ -26,8 +28,7 @@ class TicketBookSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'next_number']
 
     def get_remaining(self, obj):
-        return max(obj.end_number - obj.next_number + 1, 0)
-
+        return max(int(obj.end_number) - int(obj.next_number) + 1, 0)
 
 class WeighingDeliveryNoteSerializer(serializers.ModelSerializer):
     grower_name = serializers.SerializerMethodField()
@@ -52,14 +53,19 @@ class WeighingDeliveryNoteSerializer(serializers.ModelSerializer):
         return f"{obj.transporter.first_name} {obj.transporter.last_name}" if obj.transporter else None
 
 
+
+
 class BaleSerializer(serializers.ModelSerializer):
+    barcode = serializers.CharField(write_only=True, help_text="Raw scanned value, including the Code 39 check character.")
+    ticket_number = serializers.CharField(read_only=True)
+
     class Meta:
         model = Bale
         fields = [
             'id', 'delivery_note', 'group_number', 'lot_number', 'hessian_code',
-            'mass', 'ticket_number', 'scale', 'created_at',
+            'mass', 'barcode', 'ticket_number', 'scale', 'created_at',
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'ticket_number', 'created_at']
 
     def validate_hessian_code(self, value):
         if not HessianCode.objects.filter(code__iexact=value, is_active=True).exists():
@@ -71,9 +77,14 @@ class BaleSerializer(serializers.ModelSerializer):
         user = request.user
         branch = user.branches[0] if user.branches else None
         delivery_note = validated_data['delivery_note']
+        raw_scan = validated_data.pop('barcode')
 
         if delivery_note.branch != branch:
             raise serializers.ValidationError("This Delivery Note does not belong to your branch.")
+
+        base_number, is_valid = split_and_validate_scan(raw_scan)
+        if not is_valid:
+            raise serializers.ValidationError("Invalid barcode — checksum failed. Please rescan the ticket.")
 
         with transaction.atomic():
             dn = DeliveryNote.objects.select_for_update().get(pk=delivery_note.pk)
@@ -93,12 +104,11 @@ class BaleSerializer(serializers.ModelSerializer):
             if not ticket_book:
                 raise serializers.ValidationError("No active ticket book found for your branch.")
 
-            ticket_number = validated_data['ticket_number']
-            if ticket_number != ticket_book.next_number:
+            if base_number != ticket_book.next_number:
                 raise serializers.ValidationError(
-                    f"Ticket number out of sequence. Expected {ticket_book.next_number}."
+                    f"Ticket out of sequence. Expected ticket {ticket_book.next_number}, got {base_number}."
                 )
-            if ticket_number > ticket_book.end_number:
+            if int(base_number) > int(ticket_book.end_number):
                 raise serializers.ValidationError("This ticket book has been fully used. Register a new one.")
 
             sale_date = SaleDate.objects.filter(branch=branch, is_open=True).first()
@@ -106,10 +116,13 @@ class BaleSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("No sale date is currently open for your branch.")
 
             bale = Bale.objects.create(
-                sale_date=sale_date, branch=branch, captured_by=user, **validated_data,
+                sale_date=sale_date, branch=branch, captured_by=user,
+                ticket_number=base_number, scanned_barcode=raw_scan,
+                **validated_data,
             )
 
-            ticket_book.next_number += 1
+            width = len(ticket_book.start_number)
+            ticket_book.next_number = str(int(ticket_book.next_number) + 1).zfill(width)
             ticket_book.save(update_fields=['next_number'])
 
             if dn.status == 'pending':
