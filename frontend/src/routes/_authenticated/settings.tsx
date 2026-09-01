@@ -585,7 +585,7 @@ function HessianCodesTab() {
 }
 
 // --------- Ticket Books tab (permanent list of books) ----------
-type ApiTicketBook = { id: number; branch: string; start_number: number; end_number: number; next_number: number; is_active: boolean; remaining: number };
+type ApiTicketBook = { id: number; branch: string; start_number: string; end_number: string; next_number: string; is_active: boolean; remaining: number };
 
 function TicketBooksTab() {
   const queryClient = useQueryClient();
@@ -593,9 +593,18 @@ function TicketBooksTab() {
   const { data: books = [] } = useQuery<ApiTicketBook[]>({ queryKey: ["ticket-books"], queryFn: api.listTicketBooks });
 
   const createBook = useMutation({
-    mutationFn: () => api.createTicketBook({ start_number: parseInt(form.start_number), end_number: parseInt(form.end_number) }),
+    mutationFn: () => api.createTicketBook({ start_number: form.start_number.trim(), end_number: form.end_number.trim() }),
     onSuccess: () => { toast.success("Ticket book added"); queryClient.invalidateQueries({ queryKey: ["ticket-books"] }); setForm({ start_number: "", end_number: "" }); },
-    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to add ticket book"),
+    onError: (err) => {
+      console.error("Ticket book registration error:", err);
+
+      if (err instanceof ApiError) {
+        console.error("Backend response:", err.body);
+        toast.error(err.message);
+      } else {
+        toast.error("Failed to add ticket book");
+      }
+    },
   });
 
   const toggleActive = useMutation({
@@ -608,14 +617,28 @@ function TicketBooksTab() {
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-sm">Ticket Books</CardTitle>
         <div className="flex gap-2">
-          <Input type="number" placeholder="Start" value={form.start_number} onChange={(e) => setForm({ ...form, start_number: e.target.value })} className="h-8 w-28 font-mono" />
-          <Input type="number" placeholder="End" value={form.end_number} onChange={(e) => setForm({ ...form, end_number: e.target.value })} className="h-8 w-28 font-mono" />
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="Start Ticket"
+            value={form.start_number}
+            onChange={(e) => setForm({ ...form, start_number: e.target.value.replace(/\D/g, "") })}
+            className="h-8 w-32 font-mono"
+          />
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="Last Ticket"
+            value={form.end_number}
+            onChange={(e) => setForm({ ...form, end_number: e.target.value.replace(/\D/g, "") })}
+            className="h-8 w-32 font-mono"
+          />
           <Button size="sm" onClick={() => createBook.mutate()} disabled={!form.start_number || !form.end_number}><Plus className="size-3.5" />Add</Button>
         </div>
       </CardHeader>
       <CardContent>
         <Table>
-          <TableHeader><TableRow><TableHead>Branch</TableHead><TableHead>Range</TableHead><TableHead>Next</TableHead><TableHead>Remaining</TableHead><TableHead>Active</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Branch</TableHead><TableHead>Range</TableHead><TableHead>Next</TableHead><TableHead>Used Tickets</TableHead><TableHead>Active</TableHead></TableRow></TableHeader>
           <TableBody>
             {books.map((b) => (
               <TableRow key={b.id}>

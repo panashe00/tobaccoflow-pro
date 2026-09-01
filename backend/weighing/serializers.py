@@ -25,7 +25,7 @@ class TicketBookSerializer(serializers.ModelSerializer):
     class Meta:
         model = TicketBook
         fields = ['id', 'branch', 'start_number', 'end_number', 'next_number', 'is_active', 'remaining']
-        read_only_fields = ['id', 'next_number']
+        read_only_fields = ['id', 'branch', 'next_number', 'remaining']
 
     def get_remaining(self, obj):
         return max(int(obj.end_number) - int(obj.next_number) + 1, 0)
@@ -51,9 +51,6 @@ class WeighingDeliveryNoteSerializer(serializers.ModelSerializer):
 
     def get_transporter_name(self, obj):
         return f"{obj.transporter.first_name} {obj.transporter.last_name}" if obj.transporter else None
-
-
-
 
 class BaleSerializer(serializers.ModelSerializer):
     barcode = serializers.CharField(write_only=True, help_text="Raw scanned value, including the Code 39 check character.")

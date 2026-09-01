@@ -58,6 +58,13 @@ class TicketBookViewSet(viewsets.ModelViewSet):
             qs = qs.filter(branch__in=user.branches)
         return qs
 
+    def perform_create(self, serializer):
+        user = self.request.user
+        branch = user.branches[0] if user.branches else None
+        if not branch:
+            raise serializers.ValidationError("You have no branch assigned.")
+        serializer.save(branch=branch)
+
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def current(self, request):
         user = request.user
