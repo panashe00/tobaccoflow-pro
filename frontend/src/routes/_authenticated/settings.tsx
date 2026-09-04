@@ -638,7 +638,7 @@ function TicketBooksTab() {
       </CardHeader>
       <CardContent>
         <Table>
-          <TableHeader><TableRow><TableHead>Branch</TableHead><TableHead>Range</TableHead><TableHead>Next</TableHead><TableHead>Used Tickets</TableHead><TableHead>Active</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Branch</TableHead><TableHead>Range</TableHead><TableHead>Next</TableHead><TableHead>Available Tickets</TableHead><TableHead>Active</TableHead></TableRow></TableHeader>
           <TableBody>
             {books.map((b) => (
               <TableRow key={b.id}>

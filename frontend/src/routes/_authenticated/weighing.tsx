@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Printer, Scan, AlertTriangle, CheckCircle2, ArrowRight, Loader2, Gauge, Search } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/weighing")({
   head: () => ({ meta: [{ title: "Bale Weighing · TIMS" }] }),
@@ -30,6 +31,7 @@ type ApiBale = {
   id: number; group_number: number; lot_number: number; hessian_code: string;
   mass: number; ticket_number: number; created_at: string;
 };
+
 
 function ScaleSelector({ selectedScale, onSelect }: { selectedScale: ApiScale | null; onSelect: (s: ApiScale) => void }) {
   const { data: scales = [] } = useQuery<ApiScale[]>({ queryKey: ["scales"], queryFn: api.listScales });
@@ -108,23 +110,34 @@ function Weighing() {
     onError: () => toast.error("Failed to read mass from scale"),
   });
 
+ const [pendingSkip, setPendingSkip] = useState<{ from: string; to: string } | null>(null);
+
+  const buildBalePayload = (confirmSkip = false) => ({
+    delivery_note: selectedDN!.id,
+    group_number: parseInt(groupNumber, 10),
+    lot_number: parseInt(lotNumber, 10),
+    hessian_code: hessian,
+    mass: parseInt(mass, 10),
+    barcode: ticketNumber,
+    scale: selectedScale!.id,
+    confirm_skip: confirmSkip,
+  });
+
   const addBale = useMutation({
-    mutationFn: () =>
-      api.createBale({
-        delivery_note: selectedDN!.id,
-        group_number: parseInt(groupNumber, 10),
-        lot_number: parseInt(lotNumber, 10),
-        hessian_code: hessian,
-        mass: parseInt(mass, 10),
-        barcode: ticketNumber, // raw scan, including the Code 39 check character
-        scale: selectedScale!.id,
-      }),
+    mutationFn: (confirmSkip: boolean = false) => api.createBale(buildBalePayload(confirmSkip)),
     onSuccess: () => {
       toast.success(`Bale registered · ${bales.length + 1} of ${selectedDN!.number_of_bales}`);
       setGroupNumber(""); setLotNumber(""); setHessian(""); setMass(""); setTicketNumber("");
+      setPendingSkip(null);
       invalidateAfterCapture();
     },
-    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to register bale"),
+    onError: (err) => {
+      if (err instanceof ApiError && err.body?.skip_required) {
+        setPendingSkip({ from: err.body.skipped_from, to: err.body.skipped_to });
+        return;
+      }
+      toast.error(err instanceof ApiError ? err.message : "Failed to register bale");
+    },
   });
 
   const canCapture = !!selectedScale && !!selectedDN && !isClosed;
@@ -264,9 +277,25 @@ function Weighing() {
                 {ticketBook && <p className="text-[11px] text-muted-foreground mt-1">Expected next ticket: {ticketBook.next_number}</p>}
               </div>
               <div className="flex gap-2 pt-1">
-                <Button className="flex-1" disabled={!canSubmit || addBale.isPending} onClick={() => addBale.mutate()}>
+                <Button className="flex-1" disabled={!canSubmit || addBale.isPending} onClick={() => addBale.mutate(false)}>
                   {addBale.isPending && <Loader2 className="size-4 animate-spin" />}Register Bale
                 </Button>
+                <Dialog open={!!pendingSkip} onOpenChange={(v) => !v && setPendingSkip(null)}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Skipped Tickets</DialogTitle>
+                      <DialogDescription>
+                        Tickets {pendingSkip?.from} to {pendingSkip?.to} will be marked as skipped. This ticket will be recorded as the next one used.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setPendingSkip(null)}>Cancel</Button>
+                      <Button onClick={() => addBale.mutate(true)} disabled={addBale.isPending}>
+                        {addBale.isPending && <Loader2 className="size-4 animate-spin" />}Confirm & Register
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
                 <Button variant="outline" disabled={!canCapture} onClick={() => toast.success("Ticket printed")}><Printer className="size-4" /></Button>
               </div>
             </CardContent>

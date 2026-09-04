@@ -3,8 +3,7 @@ from rest_framework import serializers
 from deliverynotes.models import DeliveryNote
 from saledates.models import SaleDate
 from .models import Scale, HessianCode, TicketBook, Bale
-from .barcodes import split_and_validate_scan
-
+from .barcodes import split_and_validate_scan, calculate_mod43_check_char
 
 class ScaleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,13 +53,14 @@ class WeighingDeliveryNoteSerializer(serializers.ModelSerializer):
 
 class BaleSerializer(serializers.ModelSerializer):
     barcode = serializers.CharField(write_only=True, help_text="Raw scanned value, including the Code 39 check character.")
+    confirm_skip = serializers.BooleanField(write_only=True, required=False, default=False)
     ticket_number = serializers.CharField(read_only=True)
 
     class Meta:
         model = Bale
         fields = [
             'id', 'delivery_note', 'group_number', 'lot_number', 'hessian_code',
-            'mass', 'barcode', 'ticket_number', 'scale', 'created_at',
+            'mass', 'barcode', 'confirm_skip', 'ticket_number', 'scale', 'created_at',
         ]
         read_only_fields = ['id', 'ticket_number', 'created_at']
 
@@ -75,13 +75,22 @@ class BaleSerializer(serializers.ModelSerializer):
         branch = user.branches[0] if user.branches else None
         delivery_note = validated_data['delivery_note']
         raw_scan = validated_data.pop('barcode')
+        confirm_skip = validated_data.pop('confirm_skip', False)
 
         if delivery_note.branch != branch:
             raise serializers.ValidationError("This Delivery Note does not belong to your branch.")
 
         base_number, is_valid = split_and_validate_scan(raw_scan)
         if not is_valid:
-            raise serializers.ValidationError("Invalid barcode — checksum failed. Please rescan the ticket.")
+            base_for_check = raw_scan[:-1] if len(raw_scan) >= 2 else raw_scan
+            try:
+                expected_char = calculate_mod43_check_char(base_for_check)
+                hint = f" Expected check character '{expected_char}' for base '{base_for_check}'."
+            except ValueError:
+                hint = ""
+            raise serializers.ValidationError(
+                f"Invalid barcode — checksum failed.{hint} Please verify against the physical ticket and rescan."
+            )
 
         with transaction.atomic():
             dn = DeliveryNote.objects.select_for_update().get(pk=delivery_note.pk)
@@ -101,12 +110,30 @@ class BaleSerializer(serializers.ModelSerializer):
             if not ticket_book:
                 raise serializers.ValidationError("No active ticket book found for your branch.")
 
-            if base_number != ticket_book.next_number:
+            width = len(ticket_book.start_number)
+            base_padded = base_number.zfill(width) if len(base_number) <= width else base_number
+
+            if Bale.objects.filter(ticket_number=base_padded).exists():
+                raise serializers.ValidationError(f"Ticket {base_padded} has already been used.")
+
+            base_int = int(base_padded)
+            start_int = int(ticket_book.start_number)
+            end_int = int(ticket_book.end_number)
+            next_int = int(ticket_book.next_number)
+
+            if base_int < start_int or base_int > end_int:
                 raise serializers.ValidationError(
-                    f"Ticket out of sequence. Expected ticket {ticket_book.next_number}, got {base_number}."
+                    f"Ticket {base_padded} is outside this book's range ({ticket_book.start_number}–{ticket_book.end_number})."
                 )
-            if int(base_number) > int(ticket_book.end_number):
-                raise serializers.ValidationError("This ticket book has been fully used. Register a new one.")
+
+            if base_int > next_int and not confirm_skip:
+                raise serializers.ValidationError({
+                    'skip_required': True,
+                    'skipped_from': str(next_int).zfill(width),
+                    'skipped_to': str(base_int - 1).zfill(width),
+                    'detail': f"Tickets {str(next_int).zfill(width)} to {str(base_int - 1).zfill(width)} "
+                              f"will be skipped. Confirm to proceed.",
+                })
 
             sale_date = SaleDate.objects.filter(branch=branch, is_open=True).first()
             if not sale_date:
@@ -114,13 +141,13 @@ class BaleSerializer(serializers.ModelSerializer):
 
             bale = Bale.objects.create(
                 sale_date=sale_date, branch=branch, captured_by=user,
-                ticket_number=base_number, scanned_barcode=raw_scan,
+                ticket_number=base_padded, scanned_barcode=raw_scan,
                 **validated_data,
             )
 
-            width = len(ticket_book.start_number)
-            ticket_book.next_number = str(int(ticket_book.next_number) + 1).zfill(width)
-            ticket_book.save(update_fields=['next_number'])
+            if base_int >= next_int:
+                ticket_book.next_number = str(base_int + 1).zfill(width)
+                ticket_book.save(update_fields=['next_number'])
 
             if dn.status == 'pending':
                 dn.status = 'weighed'
