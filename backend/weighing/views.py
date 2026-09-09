@@ -1,10 +1,11 @@
 import random
 from django.db import models
-from django.db.models import Count, F
+from django.db.models import Count, F, Sum
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from saledates.models import SaleDate
 from deliverynotes.models import DeliveryNote
 from users.permissions import IsAdminOrReadOnly
 from .models import Scale, HessianCode, TicketBook, Bale
@@ -121,3 +122,15 @@ class BaleViewSet(viewsets.ModelViewSet):
             results = WeighingDeliveryNoteSerializer(qs[:5], many=True).data
 
         return Response({'count': count, 'results': results})
+
+    @action(detail=False, methods=['get'], url_path='daily-summary')
+    def daily_summary(self, request):
+        user = request.user
+        branch = user.branches[0] if user.branches else None
+        sale_date = SaleDate.objects.filter(branch=branch, is_open=True).first()
+        if not sale_date:
+            return Response({'count': 0, 'total_mass': 0})
+        agg = Bale.objects.filter(sale_date=sale_date, branch=branch).aggregate(
+            count=Count('id'), total_mass=Sum('mass')
+        )
+        return Response({'count': agg['count'] or 0, 'total_mass': agg['total_mass'] or 0})

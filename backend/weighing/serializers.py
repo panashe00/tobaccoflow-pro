@@ -69,6 +69,11 @@ class BaleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid or inactive hessian code.")
         return value.upper()
 
+    def validate_mass(self, value):
+        if value < 20 or value > 120:
+            raise serializers.ValidationError("Bale mass must be between 20 kg and 120 kg.")
+        return value
+
     def create(self, validated_data):
         request = self.context['request']
         user = request.user

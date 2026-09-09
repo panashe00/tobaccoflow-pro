@@ -76,7 +76,7 @@ function Weighing() {
 
   const [groupNumber, setGroupNumber] = useState("");
   const [lotNumber, setLotNumber] = useState("");
-  const [hessian, setHessian] = useState("");
+  const [hessian, setHessian] = useState("MUN");
   const [mass, setMass] = useState("");
   const [ticketNumber, setTicketNumber] = useState("");
 
@@ -102,6 +102,7 @@ function Weighing() {
     queryClient.invalidateQueries({ queryKey: ["bales", selectedDN?.id] });
     queryClient.invalidateQueries({ queryKey: ["pending-dns-weighing"] });
     queryClient.invalidateQueries({ queryKey: ["ticket-book-current"] });
+    queryClient.invalidateQueries({ queryKey: ["daily-bale-summary"] });
   };
 
   const getMass = useMutation({
@@ -127,8 +128,7 @@ function Weighing() {
     mutationFn: (confirmSkip: boolean = false) => api.createBale(buildBalePayload(confirmSkip)),
     onSuccess: () => {
       toast.success(`Bale registered · ${bales.length + 1} of ${selectedDN!.number_of_bales}`);
-      setGroupNumber(""); setLotNumber(""); setHessian(""); setMass(""); setTicketNumber("");
-      setPendingSkip(null);
+      setGroupNumber(""); setLotNumber(""); setHessian("MUN"); setMass(""); setTicketNumber("");
       invalidateAfterCapture();
     },
     onError: (err) => {
@@ -147,6 +147,11 @@ function Weighing() {
     setSelectedDN(d);
     toast.success(`Started weighing ${d.dn_number} · ${d.number_of_bales} bales expected`);
   };
+
+  const { data: dailySummary } = useQuery<{ count: number; total_mass: number }>({
+    queryKey: ["daily-bale-summary"],
+    queryFn: api.getDailyBaleSummary,
+  });
 
   return (
     <AppShell>
@@ -186,7 +191,7 @@ function Weighing() {
                 <div className="text-xs text-muted-foreground">Total mass: {totalMass} kg</div>
               )}
               <div className="text-xs text-muted-foreground mt-1 pt-1 border-t">
-                {pendingData?.count ?? 0} D-Note{pendingData?.count === 1 ? "" : "s"} left to weigh
+                {dailySummary?.count ?? 0} bales weighed today ({dailySummary?.total_mass ?? 0} kg) · {pendingData?.count ?? 0} D-Note{pendingData?.count === 1 ? "" : "s"} left
               </div>
             </CardContent>
           </Card>
@@ -272,7 +277,19 @@ function Weighing() {
                 <Label className="text-xs">Ticket Barcode</Label>
                 <div className="relative">
                   <Scan className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                  <Input value={ticketNumber} onChange={(e) => setTicketNumber(e.target.value)} placeholder="Scan after printing" className="pl-8 font-mono" disabled={!canCapture} />
+                  <Input
+                    value={ticketNumber}
+                    onChange={(e) => setTicketNumber(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (canSubmit) addBale.mutate(false);
+                      }
+                    }}
+                    placeholder="Scan after printing"
+                    className="pl-8 font-mono"
+                    disabled={!canCapture}
+                  />
                 </div>
                 {ticketBook && <p className="text-[11px] text-muted-foreground mt-1">Expected next ticket: {ticketBook.next_number}</p>}
               </div>

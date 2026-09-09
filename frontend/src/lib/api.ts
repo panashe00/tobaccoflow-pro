@@ -12,6 +12,20 @@ export class ApiError extends Error {
   }
 }
 
+function extractErrorMessage(body: any): string {
+  if (!body) return "Something went wrong";
+  if (typeof body === "string") return body;
+  if (Array.isArray(body)) return typeof body[0] === "string" ? body[0] : "Something went wrong";
+  if (body.detail && typeof body.detail === "string") return body.detail;
+  const firstKey = Object.keys(body)[0];
+  if (firstKey) {
+    const val = body[firstKey];
+    if (Array.isArray(val) && typeof val[0] === "string") return val[0];
+    if (typeof val === "string") return val;
+  }
+  return "Something went wrong";
+}
+
 async function request(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -22,7 +36,7 @@ async function request(path: string, options: RequestInit = {}) {
   if (!res.ok) {
     let body: any = null;
     try { body = await res.json(); } catch {}
-    throw new ApiError(body?.detail ?? "Something went wrong", res.status, body);
+    throw new ApiError(extractErrorMessage(body), res.status, body);
   }
 
   if (res.status === 204) return null;
@@ -151,4 +165,5 @@ export const api = {
     request(`/bales/pending-delivery-notes/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
   listBalesForDeliveryNote: (dnId: number) => request(`/bales/?delivery_note=${dnId}`),
   createBale: (data: Record<string, unknown>) => request("/bales/", { method: "POST", body: JSON.stringify(data) }),
+  getDailyBaleSummary: () => request("/bales/daily-summary/"),
 };
