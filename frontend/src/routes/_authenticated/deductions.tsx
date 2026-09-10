@@ -1,15 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppShell, PageHeader } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, ArrowRight, CheckCircle2 } from "lucide-react";
-import { GROWERS, DELIVERY_NOTES, formatUSD } from "@/lib/dummy-data";
+import { Trash2, Plus, ArrowRight, CheckCircle2, Search, Loader2, Truck } from "lucide-react";
+import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/deductions")({
@@ -17,91 +17,135 @@ export const Route = createFileRoute("/_authenticated/deductions")({
   component: Deductions,
 });
 
-const TYPES = ["Hessian Cost", "Transporter Cost", "Canteen", "Loans", "Miscellaneous"];
+type ApiPendingDN = {
+  id: number; dn_number: string; grower_name: string; grower_number: string;
+  transporter_id: number | null; transporter_name: string | null; requires_transporter_deduction: boolean;
+  branch: string; number_of_bales: number; date_received: string; deduction_count: number;
+};
 
-const initial = [
-  { id: 1, grower: "GR-2024-0142", type: "Hessian Cost", amount: 42.5, desc: "42 hessian wraps @ $1.01", date: "2024-10-21" },
-  { id: 2, grower: "GR-2024-0142", type: "Transporter Cost", amount: 180, desc: "Highway Logistics", date: "2024-10-21" },
-  { id: 3, grower: "GR-2024-0142", type: "Loans", amount: 320, desc: "Seasonal input loan repayment", date: "2024-10-15" },
-  { id: 4, grower: "GR-2024-0391", type: "Canteen", amount: 25, desc: "Meals during weighing", date: "2024-10-22" },
-];
+type ApiGrowerDeduction = {
+  id: number; delivery_note: number; name: string; amount: string; note: string | null; is_transporter: boolean; created_at: string;
+};
 
-// Growers pending deductions capture (after weighing/processing, before salesheet)
-const pendingInitial = [
-  { grower: "GR-2024-0142", name: "Tendai Moyo", dn: "DN-2410-00231", branch: "Harare", bales: 42, readyAt: "2024-10-22 09:14" },
-  { grower: "GR-2024-0287", name: "Chipo Mukasa", dn: "DN-2410-00232", branch: "Karoi", bales: 28, readyAt: "2024-10-22 10:02" },
-  { grower: "GR-2024-0391", name: "Farai Ncube", dn: "DN-2410-00233", branch: "Rusape", bales: 56, readyAt: "2024-10-22 10:48" },
-  { grower: "GR-2024-0455", name: "Rumbidzai Sibanda", dn: "DN-2410-00234", branch: "Marondera", bales: 19, readyAt: "2024-10-22 11:30" },
-  { grower: "GR-2024-0512", name: "Tafadzwa Chirwa", dn: "DN-2410-00235", branch: "Bindura", bales: 73, readyAt: "2024-10-22 12:05" },
-  { grower: "GR-2024-0633", name: "Memory Dube", dn: "DN-2410-00236", branch: "Mvurwi", bales: 34, readyAt: "2024-10-22 12:41" },
-];
+function formatUSD(n: number) {
+  return `$${n.toFixed(2)}`;
+}
 
 function Deductions() {
-  const [items, setItems] = useState(initial);
-  const [pending, setPending] = useState(pendingInitial);
-  const [grower, setGrower] = useState<string | null>(null);
-  const [type, setType] = useState(TYPES[0]);
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [selectedDN, setSelectedDN] = useState<ApiPendingDN | null>(null);
+  const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
-  const [desc, setDesc] = useState("");
+  const [note, setNote] = useState("");
+  const [transporterAmount, setTransporterAmount] = useState("");
 
-  const filtered = grower ? items.filter((i) => i.grower === grower) : [];
-  const total = filtered.reduce((s, i) => s + i.amount, 0);
-  const selected = pending.find((p) => p.grower === grower);
+  const { data: pendingData, isLoading: loadingPending } = useQuery<{ count: number; results: ApiPendingDN[] }>({
+    queryKey: ["pending-deductions", search],
+    queryFn: () => api.listPendingDeductions(search),
+  });
 
-  const add = () => {
-    if (!grower) { toast.error("Select a grower first"); return; }
-    if (!amount) { toast.error("Amount required"); return; }
-    setItems([...items, { id: Date.now(), grower, type, amount: parseFloat(amount), desc, date: "2024-10-22" }]);
-    setAmount(""); setDesc("");
-    toast.success("Deduction added");
+  const { data: deductions = [] } = useQuery<ApiGrowerDeduction[]>({
+    queryKey: ["grower-deductions", selectedDN?.id],
+    queryFn: () => api.listGrowerDeductions(selectedDN!.id),
+    enabled: !!selectedDN,
+  });
+
+  const total = deductions.reduce((s, d) => s + parseFloat(d.amount), 0);
+  const needsTransporterDeduction = !!selectedDN?.transporter_id && !deductions.some((d) => d.is_transporter);
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["grower-deductions", selectedDN?.id] });
+    queryClient.invalidateQueries({ queryKey: ["pending-deductions"] });
   };
 
-  const remove = (id: number) => { setItems(items.filter((i) => i.id !== id)); toast.success("Deduction removed"); };
+  const addDeduction = useMutation({
+    mutationFn: () => api.createGrowerDeduction({ delivery_note: selectedDN!.id, name, amount: parseFloat(amount), note: note || null }),
+    onSuccess: () => {
+      toast.success("Deduction added");
+      setName(""); setAmount(""); setNote("");
+      invalidate();
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to add deduction"),
+  });
 
-  const completeGrower = () => {
-    if (!grower) return;
-    setPending(pending.filter((p) => p.grower !== grower));
-    toast.success(`Deductions finalised for ${selected?.name}. Forwarded to Salesheet.`);
-    setGrower(null);
-  };
+  const addTransporter = useMutation({
+    mutationFn: () => api.addTransporterDeduction(selectedDN!.id, parseFloat(transporterAmount)),
+    onSuccess: () => {
+      toast.success("Transporter deduction added");
+      setTransporterAmount("");
+      invalidate();
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to add transporter deduction"),
+  });
+
+  const removeDeduction = useMutation({
+    mutationFn: (id: number) => api.deleteGrowerDeduction(id),
+    onSuccess: () => { toast.success("Deduction removed"); invalidate(); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to remove deduction"),
+  });
+
+  const complete = useMutation({
+    mutationFn: () => api.completeDeductions(selectedDN!.id),
+    onSuccess: () => {
+      toast.success(`Deductions finalised for ${selectedDN!.grower_name}. Forwarded to next stage.`);
+      setSelectedDN(null);
+      invalidate();
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to complete deductions"),
+  });
 
   return (
     <AppShell>
       <div className="p-6 max-w-[1600px] mx-auto">
-        <PageHeader title="Deductions" description="Capture deductions to be removed from farmer payment. Linked automatically to Salesheet." />
+        <PageHeader title="Deductions" description="Capture internal deductions to be removed from farmer payment. Applies only where relevant, unlike preset deductions." />
 
         <Card className="mb-4">
           <CardHeader className="pb-2 flex-row items-center justify-between">
-            <CardTitle className="text-sm">Growers Pending Deductions</CardTitle>
-            <Badge variant="outline" className="font-mono">{pending.length} pending</Badge>
+            <div>
+              <CardTitle className="text-sm">Growers Pending Deductions</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">Weighed D-Notes for the open sale date that haven't had deductions captured yet.</p>
+            </div>
+            <Badge variant="outline" className="font-mono">{pendingData?.count ?? 0} pending</Badge>
           </CardHeader>
           <CardContent className="p-0">
+            <div className="relative max-w-sm px-4 pt-2 pb-3">
+              <Search className="absolute left-6.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search grower name or number…" className="pl-8" />
+            </div>
             <Table>
               <TableHeader><TableRow>
                 <TableHead>Grower #</TableHead><TableHead>Name</TableHead><TableHead>D-Note</TableHead>
                 <TableHead>Branch</TableHead><TableHead className="text-right">Bales</TableHead>
-                <TableHead>Ready Since</TableHead><TableHead></TableHead>
+                <TableHead>Transporter</TableHead><TableHead></TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {pending.map((p) => {
-                  const active = p.grower === grower;
+                {loadingPending && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8 text-sm">Loading…</TableCell></TableRow>}
+                {!loadingPending && (pendingData?.results.length ?? 0) === 0 && (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8 text-sm">No growers pending deductions</TableCell></TableRow>
+                )}
+                {pendingData?.results.map((p) => {
+                  const active = p.id === selectedDN?.id;
                   return (
-                    <TableRow key={p.grower} className={active ? "bg-muted/50" : ""}>
-                      <TableCell className="font-mono text-xs">{p.grower}</TableCell>
-                      <TableCell className="font-medium">{p.name}</TableCell>
-                      <TableCell className="font-mono text-xs">{p.dn}</TableCell>
+                    <TableRow key={p.id} className={active ? "bg-muted/50" : ""}>
+                      <TableCell className="font-mono text-xs">{p.grower_number}</TableCell>
+                      <TableCell className="font-medium">{p.grower_name}</TableCell>
+                      <TableCell className="font-mono text-xs">{p.dn_number}</TableCell>
                       <TableCell><Badge variant="secondary" className="font-normal">{p.branch}</Badge></TableCell>
-                      <TableCell className="text-right font-mono">{p.bales}</TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{p.readyAt}</TableCell>
+                      <TableCell className="text-right font-mono">{p.number_of_bales}</TableCell>
+                      <TableCell className="text-sm">{p.transporter_name ?? "—"}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant={active ? "secondary" : "default"} onClick={() => { setGrower(p.grower); toast.success(`Capturing deductions for ${p.name}`); }}>
+                        <Button
+                          size="sm"
+                          variant={active ? "secondary" : "default"}
+                          onClick={() => { setSelectedDN(p); toast.success(`Capturing deductions for ${p.grower_name}`); }}
+                        >
                           {active ? "Selected" : <>Start <ArrowRight className="size-3 ml-1" /></>}
                         </Button>
                       </TableCell>
                     </TableRow>
                   );
                 })}
-                {pending.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8 text-sm">No growers pending deductions</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent>
@@ -114,51 +158,86 @@ function Deductions() {
               <div className="space-y-1.5">
                 <Label className="text-xs">Grower</Label>
                 <div className="h-9 px-3 flex items-center rounded-md border bg-muted/30 text-sm font-mono">
-                  {grower ? `${grower} · ${selected?.name ?? GROWERS.find(g => g.number === grower)?.name ?? ""}` : <span className="text-muted-foreground font-sans">Select from table above</span>}
+                  {selectedDN ? `${selectedDN.grower_number} · ${selectedDN.grower_name}` : <span className="text-muted-foreground font-sans">Select from table above</span>}
                 </div>
               </div>
+
+              {selectedDN?.transporter_id && needsTransporterDeduction && (
+                <div className="rounded-md border border-warning/40 bg-warning/5 p-3 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-medium">
+                    <Truck className="size-3.5" />Transporter Deduction Required
+                  </div>
+                  <div className="text-xs text-muted-foreground">{selectedDN.transporter_name}</div>
+                  <div className="flex gap-2">
+                    <Input type="number" step="0.01" value={transporterAmount} onChange={(e) => setTransporterAmount(e.target.value)} placeholder="Amount (USD)" className="font-mono h-8" />
+                    <Button size="sm" onClick={() => addTransporter.mutate()} disabled={!transporterAmount || addTransporter.isPending}>
+                      {addTransporter.isPending && <Loader2 className="size-3.5 animate-spin" />}Add
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-1.5">
-                <Label className="text-xs">Type</Label>
-                <Select value={type} onValueChange={setType} disabled={!grower}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                </Select>
+                <Label className="text-xs">Deduction Name</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Canteen, Loan Repayment" disabled={!selectedDN} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Amount (USD)</Label>
-                <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" placeholder="0.00" disabled={!grower} />
+                <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" placeholder="0.00" disabled={!selectedDN} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Description</Label>
-                <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Brief note" disabled={!grower} />
+                <Label className="text-xs">Note</Label>
+                <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Brief reason" disabled={!selectedDN} />
               </div>
-              <Button onClick={add} className="w-full" disabled={!grower}><Plus className="size-4" />Add Deduction</Button>
-              <Button onClick={completeGrower} variant="outline" className="w-full" disabled={!grower}><CheckCircle2 className="size-4" />Complete & Forward</Button>
+              <Button onClick={() => addDeduction.mutate()} className="w-full" disabled={!selectedDN || !name || !amount || addDeduction.isPending}>
+                {addDeduction.isPending && <Loader2 className="size-4 animate-spin" />}<Plus className="size-4" />Add Deduction
+              </Button>
+              <Button
+                onClick={() => complete.mutate()}
+                variant="outline"
+                className="w-full"
+                disabled={!selectedDN || needsTransporterDeduction || complete.isPending}
+              >
+                {complete.isPending && <Loader2 className="size-4 animate-spin" />}<CheckCircle2 className="size-4" />Complete & Forward
+              </Button>
+              {needsTransporterDeduction && (
+                <p className="text-xs text-warning-foreground text-center">Add the transporter deduction before completing.</p>
+              )}
             </CardContent>
           </Card>
 
           <Card className="lg:col-span-2">
             <CardHeader className="pb-2 flex-row items-center justify-between">
-              <CardTitle className="text-sm">Deductions for {grower ?? "—"}</CardTitle>
+              <CardTitle className="text-sm">Deductions for {selectedDN?.grower_name ?? "—"}</CardTitle>
               <Badge variant="outline" className="font-mono">Total: {formatUSD(total)}</Badge>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Description</TableHead>
+                  <TableHead>Name</TableHead><TableHead>Note</TableHead>
                   <TableHead className="text-right">Amount</TableHead><TableHead></TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {filtered.map((i) => (
-                    <TableRow key={i.id}>
-                      <TableCell className="font-mono text-xs">{i.date}</TableCell>
-                      <TableCell><Badge variant="secondary" className="font-normal">{i.type}</Badge></TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{i.desc}</TableCell>
-                      <TableCell className="text-right font-mono">{formatUSD(i.amount)}</TableCell>
-                      <TableCell><Button variant="ghost" size="sm" onClick={() => remove(i.id)}><Trash2 className="size-3.5 text-destructive" /></Button></TableCell>
+                  {deductions.map((d) => (
+                    <TableRow key={d.id}>
+                      <TableCell>
+                        {d.name}
+                        {d.is_transporter && <Badge variant="secondary" className="ml-2 font-normal">Transporter</Badge>}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{d.note ?? "—"}</TableCell>
+                      <TableCell className="text-right font-mono">{formatUSD(parseFloat(d.amount))}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm" onClick={() => removeDeduction.mutate(d.id)}>
+                          <Trash2 className="size-3.5 text-destructive" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
-                  {filtered.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8 text-sm">{grower ? "No deductions for this grower" : "Select a grower from the pending table"}</TableCell></TableRow>}
+                  {deductions.length === 0 && (
+                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8 text-sm">
+                      {selectedDN ? "No deductions for this grower yet" : "Select a grower from the pending table"}
+                    </TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -168,6 +247,3 @@ function Deductions() {
     </AppShell>
   );
 }
-
-// keep referenced imports used
-void DELIVERY_NOTES;

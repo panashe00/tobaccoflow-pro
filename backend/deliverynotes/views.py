@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from saledates.models import SaleDate
 from .models import DeliveryNote
 from .serializers import DeliveryNoteSerializer
-
+from growerdeductions.models import GrowerDeduction
 
 class DeliveryNoteViewSet(viewsets.ModelViewSet):
     queryset = DeliveryNote.objects.select_related('grower', 'transporter', 'sale_date').all()
@@ -64,3 +64,15 @@ class DeliveryNoteViewSet(viewsets.ModelViewSet):
         delivery_note.number_of_bales += additional
         delivery_note.save(update_fields=['number_of_bales'])
         return Response(DeliveryNoteSerializer(delivery_note).data)
+
+    @action(detail=True, methods=['post'], url_path='complete-deductions')
+    def complete_deductions(self, request, pk=None):
+        dn = self.get_object()
+        if dn.transporter and not GrowerDeduction.objects.filter(delivery_note=dn, is_transporter=True).exists():
+            return Response(
+                {'detail': 'A transporter deduction must be added before completing.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        dn.deductions_completed_at = timezone.now()
+        dn.save(update_fields=['deductions_completed_at'])
+        return Response({'detail': 'Deductions completed and forwarded.'})

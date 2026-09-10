@@ -40,6 +40,8 @@ class DeliveryNote(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='delivery_notes_created')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    deductions_completed_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         db_table = 'delivery_notes'
         ordering = ['-created_at']

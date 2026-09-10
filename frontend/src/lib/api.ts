@@ -166,4 +166,15 @@ export const api = {
   listBalesForDeliveryNote: (dnId: number) => request(`/bales/?delivery_note=${dnId}`),
   createBale: (data: Record<string, unknown>) => request("/bales/", { method: "POST", body: JSON.stringify(data) }),
   getDailyBaleSummary: () => request("/bales/daily-summary/"),
+
+  // INTERNAL DEDUCTIONS
+  listPendingDeductions: (search?: string) =>
+    request(`/grower-deductions/pending/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+  listGrowerDeductions: (dnId: number) => request(`/grower-deductions/?delivery_note=${dnId}`),
+  createGrowerDeduction: (data: Record<string, unknown>) =>
+    request("/grower-deductions/", { method: "POST", body: JSON.stringify(data) }),
+  addTransporterDeduction: (delivery_note: number, amount: number) =>
+    request("/grower-deductions/add_transporter_deduction/", { method: "POST", body: JSON.stringify({ delivery_note, amount }) }),
+  deleteGrowerDeduction: (id: number) => request(`/grower-deductions/${id}/`, { method: "DELETE" }),
+  completeDeductions: (dnId: number) => request(`/delivery-notes/${dnId}/complete-deductions/`, { method: "POST" }),
 };
