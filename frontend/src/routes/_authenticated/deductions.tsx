@@ -21,6 +21,7 @@ type ApiPendingDN = {
   id: number; dn_number: string; grower_name: string; grower_number: string;
   transporter_id: number | null; transporter_name: string | null; requires_transporter_deduction: boolean;
   branch: string; number_of_bales: number; date_received: string; deduction_count: number;
+  sale_date_display: string; is_editable: boolean; deductions_completed: boolean;
 };
 
 type ApiGrowerDeduction = {
@@ -104,9 +105,13 @@ function Deductions() {
           <CardHeader className="pb-2 flex-row items-center justify-between">
             <div>
               <CardTitle className="text-sm">Growers Pending Deductions</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">Weighed D-Notes for the open sale date that haven't had deductions captured yet.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {search
+                  ? "Searching all Delivery Notes that have been weighed. Only the open sale date can be edited."
+                  : "Weighed D-Notes for the open sale date that haven't had deductions captured yet."}
+              </p>
             </div>
-            <Badge variant="outline" className="font-mono">{pendingData?.count ?? 0} pending</Badge>
+            <Badge variant="outline" className="font-mono">{pendingData?.count ?? 0} {search ? "results" : "pending"}</Badge>
           </CardHeader>
           <CardContent className="p-0">
             <div className="relative max-w-sm px-4 pt-2 pb-3">
@@ -116,13 +121,13 @@ function Deductions() {
             <Table>
               <TableHeader><TableRow>
                 <TableHead>Grower #</TableHead><TableHead>Name</TableHead><TableHead>D-Note</TableHead>
-                <TableHead>Branch</TableHead><TableHead className="text-right">Bales</TableHead>
+                <TableHead>Sale Date</TableHead><TableHead>Branch</TableHead><TableHead className="text-right">Bales</TableHead>
                 <TableHead>Transporter</TableHead><TableHead></TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {loadingPending && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8 text-sm">Loading…</TableCell></TableRow>}
+                {loadingPending && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8 text-sm">Loading…</TableCell></TableRow>}
                 {!loadingPending && (pendingData?.results.length ?? 0) === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8 text-sm">No growers pending deductions</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8 text-sm">No growers found</TableCell></TableRow>
                 )}
                 {pendingData?.results.map((p) => {
                   const active = p.id === selectedDN?.id;
@@ -131,6 +136,10 @@ function Deductions() {
                       <TableCell className="font-mono text-xs">{p.grower_number}</TableCell>
                       <TableCell className="font-medium">{p.grower_name}</TableCell>
                       <TableCell className="font-mono text-xs">{p.dn_number}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {p.sale_date_display}
+                        {!p.is_editable && <Badge variant="outline" className="ml-2 font-normal">Read-only</Badge>}
+                      </TableCell>
                       <TableCell><Badge variant="secondary" className="font-normal">{p.branch}</Badge></TableCell>
                       <TableCell className="text-right font-mono">{p.number_of_bales}</TableCell>
                       <TableCell className="text-sm">{p.transporter_name ?? "—"}</TableCell>
@@ -138,9 +147,9 @@ function Deductions() {
                         <Button
                           size="sm"
                           variant={active ? "secondary" : "default"}
-                          onClick={() => { setSelectedDN(p); toast.success(`Capturing deductions for ${p.grower_name}`); }}
+                          onClick={() => { setSelectedDN(p); toast.success(p.is_editable ? `Capturing deductions for ${p.grower_name}` : `Viewing deductions for ${p.grower_name} (read-only)`); }}
                         >
-                          {active ? "Selected" : <>Start <ArrowRight className="size-3 ml-1" /></>}
+                          {active ? "Selected" : <>{p.is_editable ? "Start" : "View"} <ArrowRight className="size-3 ml-1" /></>}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -162,7 +171,13 @@ function Deductions() {
                 </div>
               </div>
 
-              {selectedDN?.transporter_id && needsTransporterDeduction && (
+              {selectedDN && !selectedDN.is_editable && (
+                <p className="text-xs text-muted-foreground rounded-md border bg-muted/30 p-2">
+                  This Delivery Note's sale date is closed. You can view its deductions but not edit them.
+                </p>
+              )}
+
+              {selectedDN?.is_editable && selectedDN.transporter_id && needsTransporterDeduction && (
                 <div className="rounded-md border border-warning/40 bg-warning/5 p-3 space-y-2">
                   <div className="flex items-center gap-1.5 text-xs font-medium">
                     <Truck className="size-3.5" />Transporter Deduction Required
@@ -179,28 +194,29 @@ function Deductions() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs">Deduction Name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Canteen, Loan Repayment" disabled={!selectedDN} />
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Canteen, Loan Repayment" disabled={!selectedDN?.is_editable} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Amount (USD)</Label>
-                <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" placeholder="0.00" disabled={!selectedDN} />
+                <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" placeholder="0.00" disabled={!selectedDN?.is_editable} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Note</Label>
-                <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Brief reason" disabled={!selectedDN} />
+                <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Brief reason" disabled={!selectedDN?.is_editable} />
               </div>
-              <Button onClick={() => addDeduction.mutate()} className="w-full" disabled={!selectedDN || !name || !amount || addDeduction.isPending}>
+              <Button onClick={() => addDeduction.mutate()} className="w-full" disabled={!selectedDN?.is_editable || !name || !amount || addDeduction.isPending}>
                 {addDeduction.isPending && <Loader2 className="size-4 animate-spin" />}<Plus className="size-4" />Add Deduction
               </Button>
               <Button
                 onClick={() => complete.mutate()}
                 variant="outline"
                 className="w-full"
-                disabled={!selectedDN || needsTransporterDeduction || complete.isPending}
+                disabled={!selectedDN?.is_editable || needsTransporterDeduction || complete.isPending}
               >
-                {complete.isPending && <Loader2 className="size-4 animate-spin" />}<CheckCircle2 className="size-4" />Complete & Forward
+                {complete.isPending && <Loader2 className="size-4 animate-spin" />}<CheckCircle2 className="size-4" />
+                {selectedDN?.deductions_completed ? "Already Forwarded" : "Complete & Forward"}
               </Button>
-              {needsTransporterDeduction && (
+              {selectedDN?.is_editable && needsTransporterDeduction && (
                 <p className="text-xs text-warning-foreground text-center">Add the transporter deduction before completing.</p>
               )}
             </CardContent>
@@ -227,9 +243,11 @@ function Deductions() {
                       <TableCell className="text-muted-foreground text-sm">{d.note ?? "—"}</TableCell>
                       <TableCell className="text-right font-mono">{formatUSD(parseFloat(d.amount))}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => removeDeduction.mutate(d.id)}>
-                          <Trash2 className="size-3.5 text-destructive" />
-                        </Button>
+                        {selectedDN?.is_editable && (
+                          <Button variant="ghost" size="sm" onClick={() => removeDeduction.mutate(d.id)}>
+                            <Trash2 className="size-3.5 text-destructive" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -17,6 +17,9 @@ class PendingDeductionDeliveryNoteSerializer(serializers.ModelSerializer):
     transporter_name = serializers.SerializerMethodField()
     requires_transporter_deduction = serializers.SerializerMethodField()
     deduction_count = serializers.SerializerMethodField()
+    sale_date_display = serializers.DateField(source='sale_date.date', read_only=True)
+    is_editable = serializers.BooleanField(source='sale_date.is_open', read_only=True)
+    deductions_completed = serializers.SerializerMethodField()
 
     class Meta:
         model = DeliveryNote
@@ -24,6 +27,7 @@ class PendingDeductionDeliveryNoteSerializer(serializers.ModelSerializer):
             'id', 'dn_number', 'grower_name', 'grower_number',
             'transporter_id', 'transporter_name', 'requires_transporter_deduction',
             'branch', 'number_of_bales', 'date_received', 'deduction_count',
+            'sale_date_display', 'is_editable', 'deductions_completed',
         ]
 
     def get_grower_name(self, obj):
@@ -40,3 +44,6 @@ class PendingDeductionDeliveryNoteSerializer(serializers.ModelSerializer):
 
     def get_deduction_count(self, obj):
         return obj.grower_deductions.count()
+
+    def get_deductions_completed(self, obj):
+        return obj.deductions_completed_at is not None

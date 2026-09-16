@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -19,7 +20,7 @@ class DeliveryNoteViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.branches:
             qs = qs.filter(branch__in=user.branches)
-        if not self.request.query_params.get('search'):
+        if self.action == 'list' and not self.request.query_params.get('search'):
             qs = qs.filter(sale_date__is_open=True, status='pending')
         return qs
 
@@ -68,6 +69,11 @@ class DeliveryNoteViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='complete-deductions')
     def complete_deductions(self, request, pk=None):
         dn = self.get_object()
+        if not dn.sale_date.is_open:
+            return Response(
+                {'detail': "This Delivery Note's sale date is closed and can no longer be edited."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         if dn.transporter and not GrowerDeduction.objects.filter(delivery_note=dn, is_transporter=True).exists():
             return Response(
                 {'detail': 'A transporter deduction must be added before completing.'},
