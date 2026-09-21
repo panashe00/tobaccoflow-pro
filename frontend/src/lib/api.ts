@@ -177,4 +177,20 @@ export const api = {
     request("/grower-deductions/add_transporter_deduction/", { method: "POST", body: JSON.stringify({ delivery_note, amount }) }),
   deleteGrowerDeduction: (id: number) => request(`/grower-deductions/${id}/`, { method: "DELETE" }),
   completeDeductions: (dnId: number) => request(`/delivery-notes/${dnId}/complete-deductions/`, { method: "POST" }),
+
+  // TICKET PRE-PROCESSING
+  lookupTicketForPreProcessing: (ticket_number: string) =>
+    request(`/ticket-preprocessing/lookup/?ticket_number=${encodeURIComponent(ticket_number)}`),
+  saveTicketPreProcessing: (data: Record<string, unknown>) =>
+    request("/ticket-preprocessing/save/", { method: "POST", body: JSON.stringify(data) }),
+  listPreProcessedToday: (search?: string) =>
+    request(`/ticket-preprocessing/today/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+
+  // BALE PROCESSING
+  lookupBaleProcessing: (ticket_number: string) =>
+    request(`/bale-processing/lookup/?ticket_number=${encodeURIComponent(ticket_number)}`),
+  saveBaleProcessing: (data: Record<string, unknown>) =>
+    request("/bale-processing/save/", { method: "POST", body: JSON.stringify(data) }),
+  listBaleProcessingToday: (search?: string) =>
+    request(`/bale-processing/today/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
 };

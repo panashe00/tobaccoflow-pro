@@ -8,9 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, ArrowRight, CheckCircle2, Search, Loader2, Truck } from "lucide-react";
+import { Trash2, Plus, ArrowRight, CheckCircle2, Search, Loader2, Truck, X} from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/deductions")({
   head: () => ({ meta: [{ title: "Deductions · TIMS" }] }),
@@ -36,10 +44,12 @@ function Deductions() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selectedDN, setSelectedDN] = useState<ApiPendingDN | null>(null);
+  const [deleteDeduction, setDeleteDeduction] = useState<ApiGrowerDeduction | null>(null);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [transporterAmount, setTransporterAmount] = useState("");
+  
 
   const { data: pendingData, isLoading: loadingPending } = useQuery<{ count: number; results: ApiPendingDN[] }>({
     queryKey: ["pending-deductions", search],
@@ -116,7 +126,26 @@ function Deductions() {
           <CardContent className="p-0">
             <div className="relative max-w-sm px-4 pt-2 pb-3">
               <Search className="absolute left-6.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search grower name or number…" className="pl-8" />
+
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search grower name or number…"
+                className="pl-8 pr-10"
+              />
+
+              {search && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 size-7"
+                  onClick={() => setSearch("")}
+                  aria-label="Clear search"
+                >
+                  <X className="size-4" />
+                </Button>
+              )}
             </div>
             <Table>
               <TableHeader><TableRow>
@@ -244,7 +273,12 @@ function Deductions() {
                       <TableCell className="text-right font-mono">{formatUSD(parseFloat(d.amount))}</TableCell>
                       <TableCell>
                         {selectedDN?.is_editable && (
-                          <Button variant="ghost" size="sm" onClick={() => removeDeduction.mutate(d.id)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteDeduction(d)}
+                            disabled={removeDeduction.isPending}
+                          >
                             <Trash2 className="size-3.5 text-destructive" />
                           </Button>
                         )}
@@ -262,6 +296,63 @@ function Deductions() {
           </Card>
         </div>
       </div>
+       <Dialog
+        open={!!deleteDeduction}
+        onOpenChange={(open) => {
+          if (!open && !removeDeduction.isPending) {
+            setDeleteDeduction(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete deduction?</DialogTitle>
+
+            <DialogDescription>
+              Are you sure you want to delete this{" "}
+              <span className="font-medium text-foreground">
+                {deleteDeduction?.name}
+              </span>{" "}
+              deduction of{" "}
+              <span className="font-medium text-foreground font-mono">
+                {deleteDeduction
+                  ? formatUSD(parseFloat(deleteDeduction.amount))
+                  : ""}
+              </span>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteDeduction(null)}
+              disabled={removeDeduction.isPending}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (deleteDeduction) {
+                  removeDeduction.mutate(deleteDeduction.id, {
+                    onSuccess: () => setDeleteDeduction(null),
+                  });
+                }
+              }}
+              disabled={removeDeduction.isPending}
+            >
+              {removeDeduction.isPending && (
+                <Loader2 className="size-4 animate-spin" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

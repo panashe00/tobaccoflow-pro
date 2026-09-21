@@ -29,4 +29,6 @@ urlpatterns = [
     path('api/', include('deliverynotes.urls')),
     path('api/', include('weighing.urls')),
     path('api/', include('growerdeductions.urls')),
+    path('api/', include('ticketprocessing.urls')),
+    path('api/', include('baleprocessing.urls')),
 ]
