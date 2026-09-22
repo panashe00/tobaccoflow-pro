@@ -110,7 +110,15 @@ function Processing() {
     }
   };
 
-  const canSave = ticket && !ticket.already_processed && ticket.is_editable && buyerGrade && price;
+  const canEdit =
+    ticket &&
+    !ticket.already_processed &&
+    ticket.is_editable;
+
+  const canSave =
+    canEdit &&
+    buyerGrade.trim() !== "" &&
+    price.trim() !== "";
 
   return (
     <AppShell>
@@ -161,7 +169,7 @@ function Processing() {
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); priceRef.current?.focus(); } }}
                       placeholder="e.g. A1"
                       className="font-mono uppercase"
-                      disabled={!canSave}
+                      disabled={!canEdit}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -174,7 +182,7 @@ function Processing() {
                       onChange={(e) => setPrice(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); save(); } }}
                       className="font-mono"
-                      disabled={!canSave}
+                      disabled={!canEdit}
                     />
                   </div>
 
