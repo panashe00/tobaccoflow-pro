@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django.db import models as dj_models
+from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -153,3 +154,47 @@ class BaleProcessingViewSet(viewsets.GenericViewSet):
                 'has_mismatch': bp.has_mismatch,
             })
         return Response(results)
+
+    @action(detail=False, methods=['get'])
+    def mismatches(self, request):
+        dn_id = request.query_params.get('delivery_note')
+        qs = BaleProcessing.objects.filter(bale__delivery_note_id=dn_id).filter(
+            dj_models.Q(grade_mismatch=True) | dj_models.Q(price_mismatch=True)
+        ).select_related('bale')
+        return Response([
+            {
+                'id': bp.id,
+                'lot_number': bp.bale.lot_number,
+                'ticket_number': bp.bale.ticket_number,
+                'buyer_grade': bp.buyer_grade,
+                'price_per_kg': str(bp.price_per_kg),
+                'grade_mismatch': bp.grade_mismatch,
+                'price_mismatch': bp.price_mismatch,
+                'resolved_buyer_grade': bp.resolved_buyer_grade,
+                'resolved_price_per_kg': str(bp.resolved_price_per_kg) if bp.resolved_price_per_kg is not None else None,
+                'is_resolved': bp.is_resolved,
+            }
+            for bp in qs
+        ])
+
+    @action(detail=False, methods=['post'], url_path='resolve-mismatch')
+    def resolve_mismatch(self, request):
+        bp = BaleProcessing.objects.filter(pk=request.data.get('id')).select_related('bale').first()
+        if not bp:
+            return Response({'detail': 'Record not found.'}, status=404)
+
+        user = request.user
+        branch = user.branches[0] if user.branches else None
+        if bp.bale.branch != branch:
+            return Response({'detail': 'This ticket does not belong to your branch.'}, status=400)
+
+        bp.resolved_buyer_grade = (request.data.get('buyer_grade') or '').upper() or None
+        bp.resolved_price_per_kg = request.data.get('price_per_kg')
+        bp.resolved_by = user
+        bp.resolved_at = timezone.now()
+        bp.save(update_fields=['resolved_buyer_grade', 'resolved_price_per_kg', 'resolved_by', 'resolved_at'])
+        return Response({
+            'id': bp.id,
+            'resolved_buyer_grade': bp.resolved_buyer_grade,
+            'resolved_price_per_kg': str(bp.resolved_price_per_kg),
+        })

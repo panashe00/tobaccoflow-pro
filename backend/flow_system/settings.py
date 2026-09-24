@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'growerdeductions',
     'ticketprocessing',
     'baleprocessing',
+    'salesheets',
 ]
 
 MIDDLEWARE = [

@@ -193,4 +193,17 @@ export const api = {
     request("/bale-processing/save/", { method: "POST", body: JSON.stringify(data) }),
   listBaleProcessingToday: (search?: string) =>
     request(`/bale-processing/today/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+
+  // SALESHEETS
+  listReadyForSalesheet: (search?: string) => request(`/salesheets/ready/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+  listTodaySalesheets: () => request("/salesheets/today/"),
+  previewSalesheet: (deliveryNoteId: number, usdSplitPercent: number) =>
+    request(`/salesheets/preview/?delivery_note=${deliveryNoteId}&usd_split_percent=${usdSplitPercent}`),
+  generateSalesheet: (data: Record<string, unknown>) => request("/salesheets/generate/", { method: "POST", body: JSON.stringify(data) }),
+  recalculateSalesheet: (id: number, usd_split_percent: number) =>
+    request(`/salesheets/${id}/recalculate/`, { method: "POST", body: JSON.stringify({ usd_split_percent }) }),
+  getGrowerLifetime: (growerId: number) => request(`/salesheets/grower-lifetime/?grower=${growerId}`),
+  listMismatches: (deliveryNoteId: number) => request(`/bale-processing/mismatches/?delivery_note=${deliveryNoteId}`),
+  resolveMismatch: (id: number, buyer_grade: string, price_per_kg: number) =>
+    request("/bale-processing/resolve-mismatch/", { method: "POST", body: JSON.stringify({ id, buyer_grade, price_per_kg }) }),
 };
