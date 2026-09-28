@@ -30,34 +30,56 @@ def compute_salesheet(dn, usd_split_percent, exchange_rate):
     gross_value = sum((r['value'] for r in rows), Decimal('0'))
     bales_captured = Bale.objects.filter(delivery_note=dn).count()
 
+    exchange_rate = Decimal(exchange_rate)
+    usd_ratio = Decimal(str(usd_split_percent)) / Decimal('100')
+
+    # Start with two native-currency pools, split from gross at the user-chosen ratio.
+    # Every deduction below then draws down whichever pool(s) it's actually paid from.
+    usd_pool = gross_value * usd_ratio
+    zig_pool = (gross_value - usd_pool) * exchange_rate
+
     statutory_lines, statutory_total = [], Decimal('0')
     for rule in DeductionRule.objects.filter(is_active=True):
-        amount = (
+        base_amount = (
             gross_value * (Decimal(rule.rate) / Decimal('100'))
             if rule.calculation_type == 'percentage_of_value'
             else Decimal(rule.rate) * bales_captured
         )
-        statutory_lines.append({'label': rule.name, 'amount': amount})
-        statutory_total += amount
+
+        if rule.currency_treatment == 'usd':
+            usd_amount, zig_amount = base_amount, Decimal('0')
+            usd_pool -= usd_amount
+        elif rule.currency_treatment == 'zig':
+            usd_amount, zig_amount = Decimal('0'), base_amount * exchange_rate
+            zig_pool -= zig_amount
+        else:  # 'split' — half off the USD side, half converted to ZIG at the day's rate
+            half = base_amount / Decimal('2')
+            usd_amount, zig_amount = half, half * exchange_rate
+            usd_pool -= usd_amount
+            zig_pool -= zig_amount
+
+        statutory_lines.append({
+            'label': rule.name, 'amount': base_amount,
+            'usd_amount': usd_amount, 'zig_amount': zig_amount,
+        })
+        statutory_total += base_amount
 
     farmer_lines, farmer_total = [], Decimal('0')
     for gd in GrowerDeduction.objects.filter(delivery_note=dn):
-        farmer_lines.append({'label': gd.name, 'amount': Decimal(gd.amount)})
-        farmer_total += Decimal(gd.amount)
+        amount = Decimal(gd.amount)
+        farmer_lines.append({'label': gd.name, 'amount': amount, 'usd_amount': amount, 'zig_amount': Decimal('0')})
+        farmer_total += amount
+        usd_pool -= amount  # ad-hoc deductions are always USD, as originally captured
 
     total_deductions = statutory_total + farmer_total
     net_value = gross_value - total_deductions
-
-    usd_ratio = Decimal(str(usd_split_percent)) / Decimal('100')
-    usd_portion = net_value * usd_ratio
-    zig_portion = (net_value - usd_portion) * Decimal(exchange_rate)
 
     return {
         'rows': rows, 'total_mass': total_mass, 'gross_value': gross_value,
         'statutory_lines': statutory_lines, 'statutory_total': statutory_total,
         'farmer_lines': farmer_lines, 'farmer_total': farmer_total,
         'total_deductions': total_deductions, 'net_value': net_value,
-        'usd_portion': usd_portion, 'zig_portion': zig_portion,
+        'usd_portion': usd_pool, 'zig_portion': zig_pool,
         'bales_incomplete': bales_captured < dn.number_of_bales,
         'bales_captured': bales_captured, 'bales_expected': dn.number_of_bales,
         'unresolved_mismatches': [r for r in rows if r['has_unresolved_mismatch']],

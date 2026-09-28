@@ -5,7 +5,7 @@ from .models import Salesheet, SalesheetDeductionLine
 class SalesheetDeductionLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = SalesheetDeductionLine
-        fields = ['id', 'label', 'amount', 'category']
+        fields = ['id', 'label', 'amount', 'usd_amount', 'zig_amount', 'category']
 
 
 class SalesheetSerializer(serializers.ModelSerializer):
@@ -15,6 +15,7 @@ class SalesheetSerializer(serializers.ModelSerializer):
     national_id = serializers.CharField(source='grower.national_id', read_only=True)
     sale_date_display = serializers.DateField(source='sale_date.date', read_only=True)
     dn_number = serializers.CharField(source='delivery_note.dn_number', read_only=True)
+    is_editable = serializers.BooleanField(source='sale_date.is_open', read_only=True)
 
     class Meta:
         model = Salesheet
@@ -23,7 +24,7 @@ class SalesheetSerializer(serializers.ModelSerializer):
             'national_id', 'branch', 'sale_date', 'sale_date_display', 'exchange_rate',
             'usd_split_percent', 'total_mass', 'gross_value', 'statutory_deductions_total',
             'farmer_deductions_total', 'total_deductions', 'net_value', 'usd_portion', 'zig_portion',
-            'bales_incomplete', 'deduction_lines', 'generated_at', 'recalculated_at',
+            'bales_incomplete', 'deduction_lines', 'generated_at', 'recalculated_at', 'is_editable',
         ]
         read_only_fields = fields
 

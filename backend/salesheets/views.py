@@ -16,10 +16,16 @@ from .services import compute_salesheet
 
 def _save_lines(salesheet, result):
     lines = [
-        SalesheetDeductionLine(salesheet=salesheet, label=l['label'], amount=l['amount'], category='statutory')
+        SalesheetDeductionLine(
+            salesheet=salesheet, label=l['label'], amount=l['amount'],
+            usd_amount=l['usd_amount'], zig_amount=l['zig_amount'], category='statutory',
+        )
         for l in result['statutory_lines']
     ] + [
-        SalesheetDeductionLine(salesheet=salesheet, label=l['label'], amount=l['amount'], category='farmer')
+        SalesheetDeductionLine(
+            salesheet=salesheet, label=l['label'], amount=l['amount'],
+            usd_amount=l['usd_amount'], zig_amount=l['zig_amount'], category='farmer',
+        )
         for l in result['farmer_lines']
     ]
     SalesheetDeductionLine.objects.bulk_create(lines)
@@ -39,8 +45,14 @@ def _serialize_preview(dn, result):
             for r in result['rows']
         ],
         'total_mass': result['total_mass'], 'gross_value': str(result['gross_value']),
-        'statutory_lines': [{'label': l['label'], 'amount': str(l['amount'])} for l in result['statutory_lines']],
-        'farmer_lines': [{'label': l['label'], 'amount': str(l['amount'])} for l in result['farmer_lines']],
+        'statutory_lines': [
+            {'label': l['label'], 'amount': str(l['amount']), 'usd_amount': str(l['usd_amount']), 'zig_amount': str(l['zig_amount'])}
+            for l in result['statutory_lines']
+        ],
+        'farmer_lines': [
+            {'label': l['label'], 'amount': str(l['amount']), 'usd_amount': str(l['usd_amount']), 'zig_amount': str(l['zig_amount'])}
+            for l in result['farmer_lines']
+        ],
         'total_deductions': str(result['total_deductions']), 'net_value': str(result['net_value']),
         'usd_portion': str(result['usd_portion']), 'zig_portion': str(result['zig_portion']),
         'bales_incomplete': result['bales_incomplete'], 'bales_expected': result['bales_expected'],
@@ -91,9 +103,25 @@ class SalesheetViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'])
     def today(self, request):
+        """No search: salesheets for the open sale date only (the working default view).
+        With search: reaches every salesheet in the system, any sale date — view-only for
+        closed ones, enforced both here (is_editable flag) and in recalculate (hard 400)."""
         user = request.user
         branch = user.branches[0] if user.branches else None
-        qs = Salesheet.objects.filter(branch=branch, sale_date__is_open=True).order_by('-generated_at')
+        search = request.query_params.get('search', '').strip()
+
+        qs = Salesheet.objects.filter(branch=branch).select_related('grower', 'sale_date')
+        if search:
+            qs = qs.filter(
+                Q(reference_number__icontains=search)
+                | Q(grower__first_name__icontains=search)
+                | Q(grower__last_name__icontains=search)
+                | Q(grower__grower_number__icontains=search)
+            )
+        else:
+            qs = qs.filter(sale_date__is_open=True)
+
+        qs = qs.order_by('-generated_at')
         return Response(SalesheetSerializer(qs, many=True).data)
 
     @action(detail=False, methods=['get'])
@@ -164,6 +192,13 @@ class SalesheetViewSet(viewsets.ReadOnlyModelViewSet):
     def recalculate(self, request, pk=None):
         salesheet = self.get_object()
         dn = salesheet.delivery_note
+
+        if not salesheet.sale_date.is_open:
+            return Response(
+                {'detail': "This salesheet's sale date is closed. It can be viewed but not recalculated."},
+                status=400
+            )
+
         if dn.sale_date.exchange_rate is None:
             return Response({'detail': 'Exchange rate has not been captured for this sale date yet.'}, status=400)
 

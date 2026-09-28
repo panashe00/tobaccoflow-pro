@@ -50,7 +50,9 @@ class SalesheetDeductionLine(models.Model):
 
     salesheet = models.ForeignKey(Salesheet, on_delete=models.CASCADE, related_name='deduction_lines')
     label = models.CharField(max_length=150)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)  # USD-equivalent total, for the printed summary
+    usd_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)   # actually taken from the USD pool
+    zig_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)   # actually taken from the ZIG pool (native ZIG)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
 
     class Meta:

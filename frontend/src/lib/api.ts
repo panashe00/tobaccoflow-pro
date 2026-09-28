@@ -196,7 +196,7 @@ export const api = {
 
   // SALESHEETS
   listReadyForSalesheet: (search?: string) => request(`/salesheets/ready/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
-  listTodaySalesheets: () => request("/salesheets/today/"),
+  listTodaySalesheets: (search?: string) => request(`/salesheets/today/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
   previewSalesheet: (deliveryNoteId: number, usdSplitPercent: number) =>
     request(`/salesheets/preview/?delivery_note=${deliveryNoteId}&usd_split_percent=${usdSplitPercent}`),
   generateSalesheet: (data: Record<string, unknown>) => request("/salesheets/generate/", { method: "POST", body: JSON.stringify(data) }),

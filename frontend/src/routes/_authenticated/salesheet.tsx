@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Printer, FileDown, AlertTriangle, RefreshCw, Leaf, Loader2, ArrowRight } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
@@ -37,7 +36,8 @@ type PreviewRow = { bale_id: number; group_number: number; lot_number: number; m
 type Preview = {
   delivery_note: number; grower_name: string; grower_number: string; national_id: string | null; branch: string;
   rows: PreviewRow[]; total_mass: number; gross_value: string;
-  statutory_lines: { label: string; amount: string }[]; farmer_lines: { label: string; amount: string }[];
+  statutory_lines: { label: string; amount: string; usd_amount: string; zig_amount: string }[];
+  farmer_lines: { label: string; amount: string; usd_amount: string; zig_amount: string }[];
   total_deductions: string; net_value: string; usd_portion: string; zig_portion: string;
   bales_incomplete: boolean; bales_expected: number; bales_captured: number;
   unresolved_mismatches: { bale_id: number; lot_number: number }[];
@@ -49,8 +49,8 @@ type SalesheetRecord = {
   branch: string; sale_date_display: string; exchange_rate: string; usd_split_percent: string;
   total_mass: number; gross_value: string; statutory_deductions_total: string; farmer_deductions_total: string;
   total_deductions: string; net_value: string; usd_portion: string; zig_portion: string; bales_incomplete: boolean;
-  deduction_lines: { id: number; label: string; amount: string; category: string }[];
-  generated_at: string; recalculated_at: string | null;
+  deduction_lines: { id: number; label: string; amount: string; usd_amount: string; zig_amount: string; category: string }[];
+  generated_at: string; recalculated_at: string | null; is_editable: boolean;
 };
 
 function Salesheet() {
@@ -61,6 +61,7 @@ function Salesheet() {
   const [usdSplit, setUsdSplit] = useState("70");
   const [confirmIncomplete, setConfirmIncomplete] = useState(false);
   const [resolveDraft, setResolveDraft] = useState<Record<number, { grade: string; price: string }>>({});
+  const [salesheetSearch, setSalesheetSearch] = useState("");
 
   const { data: readyList = [] } = useQuery<ReadyDN[]>({
     queryKey: ["ready-salesheets", search],
@@ -68,8 +69,8 @@ function Salesheet() {
   });
 
   const { data: todayList = [] } = useQuery<SalesheetRecord[]>({
-    queryKey: ["today-salesheets"],
-    queryFn: api.listTodaySalesheets,
+    queryKey: ["today-salesheets", salesheetSearch],
+    queryFn: () => api.listTodaySalesheets(salesheetSearch),
   });
 
   const { data: preview, refetch: refetchPreview, isFetching: loadingPreview } = useQuery<Preview | null>({
@@ -151,10 +152,9 @@ function Salesheet() {
   };
 
   const statutoryLines = existingSalesheet?.deduction_lines.filter((l) => l.category === "statutory")
-    ?? preview?.statutory_lines.map((l, i) => ({ id: i, label: l.label, amount: l.amount })) ?? [];
+    ?? preview?.statutory_lines.map((l, i) => ({ id: i, label: l.label, amount: l.amount, usd_amount: l.usd_amount, zig_amount: l.zig_amount })) ?? [];
   const farmerLines = existingSalesheet?.deduction_lines.filter((l) => l.category === "farmer")
-    ?? preview?.farmer_lines.map((l, i) => ({ id: i, label: l.label, amount: l.amount })) ?? [];
-
+    ?? preview?.farmer_lines.map((l, i) => ({ id: i, label: l.label, amount: l.amount, usd_amount: l.usd_amount, zig_amount: l.zig_amount })) ?? [];
   const display = existingSalesheet
     ? {
         grower_name: existingSalesheet.grower_name, grower_number: existingSalesheet.grower_number,
@@ -186,25 +186,31 @@ function Salesheet() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 no-print">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Ready for Salesheet</CardTitle>
+              <CardTitle className="text-sm">{salesheetSearch ? "Search Results" : "Generated Today"}</CardTitle>
               <div className="relative mt-2">
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search grower…" className="h-8 text-xs" />
+                <Input
+                  value={salesheetSearch}
+                  onChange={(e) => setSalesheetSearch(e.target.value)}
+                  placeholder="Search reference, grower name or number…"
+                  className="h-8 text-xs"
+                />
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
-                <TableHeader><TableRow><TableHead>Grower</TableHead><TableHead className="text-right">Bales</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Reference</TableHead><TableHead>Grower</TableHead><TableHead>Sale Date</TableHead><TableHead></TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {readyList.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6 text-sm">Nothing ready yet</TableCell></TableRow>}
-                  {readyList.map((dn) => (
-                    <TableRow key={dn.delivery_note} className={selectedDN?.delivery_note === dn.delivery_note ? "bg-muted/40" : ""}>
-                      <TableCell>
-                        <div className="text-sm">{dn.grower_name}</div>
-                        <div className="text-xs text-muted-foreground font-mono">{dn.grower_number}</div>
+                  {todayList.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6 text-sm">{salesheetSearch ? "No matching salesheets" : "None generated yet"}</TableCell></TableRow>}
+                  {todayList.map((s) => (
+                    <TableRow key={s.id} className={existingSalesheet?.id === s.id ? "bg-muted/40" : ""}>
+                      <TableCell className="font-mono text-xs">{s.reference_number}</TableCell>
+                      <TableCell className="text-sm">{s.grower_name}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {s.sale_date_display}
+                        {!s.is_editable && <Badge variant="outline" className="ml-2 font-normal">View only</Badge>}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-xs">{dn.bales_processed}/{dn.bales_expected}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" onClick={() => selectReady(dn)}>Select <ArrowRight className="size-3 ml-1" /></Button>
+                        <Button size="sm" variant="outline" onClick={() => selectExisting(s)}>View</Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -375,12 +381,23 @@ function Salesheet() {
                 <Card className="border-dashed">
                   <CardHeader className="pb-2"><CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">Deductions</CardTitle></CardHeader>
                   <CardContent className="space-y-1 text-sm">
-                    {statutoryLines.map((d) => (
-                      <div key={`s-${d.id}`} className="flex justify-between"><span className="text-muted-foreground">{d.label}</span><span className="font-mono">{fUSD(d.amount)}</span></div>
+                    {statutoryLines.map((d: any) => (
+                      <div key={`s-${d.id}`} className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {d.label}
+                          {parseFloat(d.zig_amount) > 0 && parseFloat(d.usd_amount) > 0 && <span className="text-[10px] ml-1">(split)</span>}
+                          {parseFloat(d.zig_amount) > 0 && parseFloat(d.usd_amount) === 0 && <span className="text-[10px] ml-1">(ZIG)</span>}
+                        </span>
+                        <span className="font-mono text-right">
+                          {parseFloat(d.usd_amount) > 0 && fUSD(d.usd_amount)}
+                          {parseFloat(d.usd_amount) > 0 && parseFloat(d.zig_amount) > 0 && " + "}
+                          {parseFloat(d.zig_amount) > 0 && `ZIG ${fNum(d.zig_amount)}`}
+                        </span>
+                      </div>
                     ))}
                     {farmerLines.length > 0 && <div className="border-t pt-2 mt-2 font-medium">Farmer Deductions</div>}
                     {farmerLines.map((d) => (
-                      <div key={`f-${d.id}`} className="flex justify-between"><span className="text-muted-foreground">{d.label}</span><span className="font-mono">{fUSD(d.amount)}</span></div>
+                      <div key={`f-${d.id}`} className="flex justify-between"><span className="text-muted-foreground">{d.label}</span><span className="font-mono">{fUSD(d.usd_amount)}</span></div>
                     ))}
                     <div className="border-t pt-2 mt-2 flex justify-between font-semibold">
                       <span>Total Deductions</span><span className="font-mono text-destructive">−{fUSD(display.total_deductions)}</span>
