@@ -183,64 +183,71 @@ function Salesheet() {
           description="Generate farmer payment summary. USD/ZIG split is set per salesheet at the day's exchange rate."
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 no-print">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">{salesheetSearch ? "Search Results" : "Generated Today"}</CardTitle>
-              <div className="relative mt-2">
-                <Input
-                  value={salesheetSearch}
-                  onChange={(e) => setSalesheetSearch(e.target.value)}
-                  placeholder="Search reference, grower name or number…"
-                  className="h-8 text-xs"
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader><TableRow><TableHead>Reference</TableHead><TableHead>Grower</TableHead><TableHead>Sale Date</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {todayList.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6 text-sm">{salesheetSearch ? "No matching salesheets" : "None generated yet"}</TableCell></TableRow>}
-                  {todayList.map((s) => (
-                    <TableRow key={s.id} className={existingSalesheet?.id === s.id ? "bg-muted/40" : ""}>
-                      <TableCell className="font-mono text-xs">{s.reference_number}</TableCell>
-                      <TableCell className="text-sm">{s.grower_name}</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {s.sale_date_display}
-                        {!s.is_editable && <Badge variant="outline" className="ml-2 font-normal">View only</Badge>}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => selectExisting(s)}>View</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 no-print">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Ready for Salesheet</CardTitle>
+            <div className="relative mt-2">
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search grower…" className="h-8 text-xs" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader><TableRow><TableHead>Grower</TableHead><TableHead className="text-right">Bales</TableHead><TableHead></TableHead></TableRow></TableHeader>
+              <TableBody>
+                {readyList.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6 text-sm">Nothing ready yet</TableCell></TableRow>}
+                {readyList.map((dn) => (
+                  <TableRow key={dn.delivery_note} className={selectedDN?.delivery_note === dn.delivery_note ? "bg-muted/40" : ""}>
+                    <TableCell>
+                      <div className="text-sm">{dn.grower_name}</div>
+                      <div className="text-xs text-muted-foreground font-mono">{dn.grower_number}</div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs">{dn.bales_processed}/{dn.bales_expected}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" onClick={() => selectReady(dn)}>Select <ArrowRight className="size-3 ml-1" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Generated Today</CardTitle></CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader><TableRow><TableHead>Reference</TableHead><TableHead>Grower</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {todayList.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6 text-sm">None generated yet</TableCell></TableRow>}
-                  {todayList.map((s) => (
-                    <TableRow key={s.id} className={existingSalesheet?.id === s.id ? "bg-muted/40" : ""}>
-                      <TableCell className="font-mono text-xs">{s.reference_number}</TableCell>
-                      <TableCell className="text-sm">{s.grower_name}</TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => selectExisting(s)}>View</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </div>
-
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">{salesheetSearch ? "Search Results" : "Generated Today"}</CardTitle>
+            <div className="relative mt-2">
+              <Input
+                value={salesheetSearch}
+                onChange={(e) => setSalesheetSearch(e.target.value)}
+                placeholder="Search reference, grower name or number…"
+                className="h-8 text-xs"
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader><TableRow><TableHead>Reference</TableHead><TableHead>Grower</TableHead><TableHead>Sale Date</TableHead><TableHead></TableHead></TableRow></TableHeader>
+              <TableBody>
+                {todayList.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6 text-sm">{salesheetSearch ? "No matching salesheets" : "None generated yet"}</TableCell></TableRow>}
+                {todayList.map((s) => (
+                  <TableRow key={s.id} className={existingSalesheet?.id === s.id ? "bg-muted/40" : ""}>
+                    <TableCell className="font-mono text-xs">{s.reference_number}</TableCell>
+                    <TableCell className="text-sm">{s.grower_name}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {s.sale_date_display}
+                      {!s.is_editable && <Badge variant="outline" className="ml-2 font-normal">View only</Badge>}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="outline" onClick={() => selectExisting(s)}>View</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
         {selectedDN && !existingSalesheet && unresolvedCount > 0 && (
           <Alert className="mb-4 border-destructive/40 bg-destructive/5 no-print">
             <AlertTriangle className="size-4 text-destructive" />

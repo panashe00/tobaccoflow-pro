@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'ticketprocessing',
     'baleprocessing',
     'salesheets',
+    'dispatch',
 ]
 
 MIDDLEWARE = [

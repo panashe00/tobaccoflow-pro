@@ -206,4 +206,13 @@ export const api = {
   listMismatches: (deliveryNoteId: number) => request(`/bale-processing/mismatches/?delivery_note=${deliveryNoteId}`),
   resolveMismatch: (id: number, buyer_grade: string, price_per_kg: number) =>
     request("/bale-processing/resolve-mismatch/", { method: "POST", body: JSON.stringify({ id, buyer_grade, price_per_kg }) }),
+
+  // DISPATCH
+  listOpenDispatchLoads: () => request("/dispatch-loads/open_loads/"),
+  createDispatchLoad: (data: Record<string, unknown>) => request("/dispatch-loads/", { method: "POST", body: JSON.stringify(data) }),
+  addBaleToLoad: (loadId: number, barcode: string) =>
+    request(`/dispatch-loads/${loadId}/add-bale/`, { method: "POST", body: JSON.stringify({ barcode }) }),
+  removeBaleFromLoad: (loadId: number, itemId: number) =>
+    request(`/dispatch-loads/${loadId}/remove-bale/`, { method: "POST", body: JSON.stringify({ item_id: itemId }) }),
+  closeDispatchLoad: (loadId: number) => request(`/dispatch-loads/${loadId}/close/`, { method: "POST" }),
 };
