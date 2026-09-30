@@ -17,6 +17,7 @@ import { Route as AuthenticatedTransportersRouteImport } from './routes/_authent
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSalesheetRouteImport } from './routes/_authenticated/salesheet'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedRejectedBalesRouteImport } from './routes/_authenticated/rejected-bales'
 import { Route as AuthenticatedProcessingRouteImport } from './routes/_authenticated/processing'
 import { Route as AuthenticatedPreProcessingRouteImport } from './routes/_authenticated/pre-processing'
 import { Route as AuthenticatedGrowersRouteImport } from './routes/_authenticated/growers'
@@ -65,6 +66,12 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedRejectedBalesRoute =
+  AuthenticatedRejectedBalesRouteImport.update({
+    id: '/rejected-bales',
+    path: '/rejected-bales',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProcessingRoute = AuthenticatedProcessingRouteImport.update({
   id: '/processing',
   path: '/processing',
@@ -112,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/growers': typeof AuthenticatedGrowersRoute
   '/pre-processing': typeof AuthenticatedPreProcessingRoute
   '/processing': typeof AuthenticatedProcessingRoute
+  '/rejected-bales': typeof AuthenticatedRejectedBalesRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/salesheet': typeof AuthenticatedSalesheetRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -128,6 +136,7 @@ export interface FileRoutesByTo {
   '/growers': typeof AuthenticatedGrowersRoute
   '/pre-processing': typeof AuthenticatedPreProcessingRoute
   '/processing': typeof AuthenticatedProcessingRoute
+  '/rejected-bales': typeof AuthenticatedRejectedBalesRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/salesheet': typeof AuthenticatedSalesheetRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -146,6 +155,7 @@ export interface FileRoutesById {
   '/_authenticated/growers': typeof AuthenticatedGrowersRoute
   '/_authenticated/pre-processing': typeof AuthenticatedPreProcessingRoute
   '/_authenticated/processing': typeof AuthenticatedProcessingRoute
+  '/_authenticated/rejected-bales': typeof AuthenticatedRejectedBalesRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/salesheet': typeof AuthenticatedSalesheetRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/growers'
     | '/pre-processing'
     | '/processing'
+    | '/rejected-bales'
     | '/reports'
     | '/salesheet'
     | '/settings'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/growers'
     | '/pre-processing'
     | '/processing'
+    | '/rejected-bales'
     | '/reports'
     | '/salesheet'
     | '/settings'
@@ -197,6 +209,7 @@ export interface FileRouteTypes {
     | '/_authenticated/growers'
     | '/_authenticated/pre-processing'
     | '/_authenticated/processing'
+    | '/_authenticated/rejected-bales'
     | '/_authenticated/reports'
     | '/_authenticated/salesheet'
     | '/_authenticated/settings'
@@ -268,6 +281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/rejected-bales': {
+      id: '/_authenticated/rejected-bales'
+      path: '/rejected-bales'
+      fullPath: '/rejected-bales'
+      preLoaderRoute: typeof AuthenticatedRejectedBalesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/processing': {
       id: '/_authenticated/processing'
       path: '/processing'
@@ -328,6 +348,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedGrowersRoute: typeof AuthenticatedGrowersRoute
   AuthenticatedPreProcessingRoute: typeof AuthenticatedPreProcessingRoute
   AuthenticatedProcessingRoute: typeof AuthenticatedProcessingRoute
+  AuthenticatedRejectedBalesRoute: typeof AuthenticatedRejectedBalesRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSalesheetRoute: typeof AuthenticatedSalesheetRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -344,6 +365,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedGrowersRoute: AuthenticatedGrowersRoute,
   AuthenticatedPreProcessingRoute: AuthenticatedPreProcessingRoute,
   AuthenticatedProcessingRoute: AuthenticatedProcessingRoute,
+  AuthenticatedRejectedBalesRoute: AuthenticatedRejectedBalesRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSalesheetRoute: AuthenticatedSalesheetRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,

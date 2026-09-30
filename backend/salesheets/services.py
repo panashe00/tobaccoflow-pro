@@ -2,11 +2,26 @@ from decimal import Decimal
 from weighing.models import Bale
 from deductions.models import DeductionRule
 from growerdeductions.models import GrowerDeduction
-
+from rejectedbales.models import RejectedBale
 
 def get_bale_rows(dn):
     rows = []
-    for bale in Bale.objects.filter(delivery_note=dn).select_related('processing'):
+    for bale in Bale.objects.filter(delivery_note=dn).select_related('processing', 'rejection__rejection_code'):
+        if hasattr(bale, 'rejection'):
+            rows.append({
+                'bale_id': bale.id,
+                'group_number': bale.group_number,
+                'lot_number': bale.lot_number,
+                'mass': bale.mass,
+                'buyer_grade': bale.rejection.rejection_code.code,
+                'price_per_kg': Decimal('0'),
+                'value': Decimal('0'),
+                'has_unresolved_mismatch': False,
+                'is_rejected': True,
+                'rejection_description': bale.rejection.rejection_code.description,
+            })
+            continue
+
         bp = getattr(bale, 'processing', None)
         if not bp:
             continue
@@ -20,6 +35,8 @@ def get_bale_rows(dn):
             'price_per_kg': price,
             'value': Decimal(bale.mass) * Decimal(price),
             'has_unresolved_mismatch': bp.has_mismatch and not bp.is_resolved,
+            'is_rejected': False,
+            'rejection_description': None,
         })
     return rows
 

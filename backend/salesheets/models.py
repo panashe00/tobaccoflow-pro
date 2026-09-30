@@ -57,3 +57,19 @@ class SalesheetDeductionLine(models.Model):
 
     class Meta:
         db_table = 'salesheet_deduction_lines'
+
+class SalesheetBaleLine(models.Model):
+    salesheet = models.ForeignKey(Salesheet, on_delete=models.CASCADE, related_name='bale_lines')
+    bale = models.ForeignKey('weighing.Bale', on_delete=models.PROTECT, related_name='+')
+    group_number = models.PositiveIntegerField()
+    lot_number = models.PositiveIntegerField()
+    mass = models.PositiveIntegerField()
+    buyer_grade = models.CharField(max_length=20)
+    price_per_kg = models.DecimalField(max_digits=8, decimal_places=4)
+    value = models.DecimalField(max_digits=12, decimal_places=2)
+    is_rejected = models.BooleanField(default=False)
+    rejection_description = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table = 'salesheet_bale_lines'
+        ordering = ['group_number', 'lot_number']

@@ -52,6 +52,9 @@ class TicketPreProcessingViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        if hasattr(bale, 'rejection'):
+            return Response({'detail': 'This bale has been rejected and cannot be processed.'}, status=status.HTTP_400_BAD_REQUEST)
+
         existing = TicketPreProcessing.objects.filter(bale=bale).select_related('buyer').first()
 
         return Response({

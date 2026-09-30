@@ -656,6 +656,57 @@ function TicketBooksTab() {
   );
 }
 
+
+
+// ---------- Rejection Codes settings ----------
+
+type ApiRejectionCode = { id: number; code: string; description: string; is_active: boolean };
+
+function RejectionCodesTab() {
+  const queryClient = useQueryClient();
+  const [code, setCode] = useState("");
+  const [description, setDescription] = useState("");
+  const { data: codes = [] } = useQuery<ApiRejectionCode[]>({ queryKey: ["rejection-codes"], queryFn: api.listRejectionCodes });
+
+  const createCode = useMutation({
+    mutationFn: () => api.createRejectionCode({ code: code.trim().toUpperCase(), description: description.trim() }),
+    onSuccess: () => { toast.success("Rejection code added"); queryClient.invalidateQueries({ queryKey: ["rejection-codes"] }); setCode(""); setDescription(""); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to add code"),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: (r: ApiRejectionCode) => api.updateRejectionCode(r.id, { is_active: !r.is_active }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rejection-codes"] }),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-sm">Rejection Codes</CardTitle>
+        <div className="flex gap-2">
+          <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Code" className="h-8 w-24" />
+          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className="h-8 w-56" />
+          <Button size="sm" onClick={() => createCode.mutate()} disabled={code.trim().length < 1 || !description.trim()}><Plus className="size-3.5" />Add</Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Description</TableHead><TableHead>Active</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {codes.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell className="font-mono">{r.code}</TableCell>
+                <TableCell>{r.description}</TableCell>
+                <TableCell><Switch checked={r.is_active} onCheckedChange={() => toggleActive.mutate(r)} /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ---------- Main Settings component ----------
 
 function Settings() {
@@ -675,6 +726,7 @@ function Settings() {
             <TabsTrigger value="scales">Scales</TabsTrigger>
             <TabsTrigger value="hessian-codes">Hessian Codes</TabsTrigger>
             <TabsTrigger value="ticket-books">Ticket Books</TabsTrigger>
+            <TabsTrigger value="rejection-codes">Rejection Codes</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -736,7 +788,7 @@ function Settings() {
           <TabsContent value="scales"><ScalesTab /></TabsContent>
           <TabsContent value="hessian-codes"><HessianCodesTab /></TabsContent>
           <TabsContent value="ticket-books"><TicketBooksTab /></TabsContent>
-
+          <TabsContent value="rejection-codes"><RejectionCodesTab /></TabsContent>
         </Tabs>
       </div>
     </AppShell>

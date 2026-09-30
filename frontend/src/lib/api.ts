@@ -215,4 +215,14 @@ export const api = {
   removeBaleFromLoad: (loadId: number, itemId: number) =>
     request(`/dispatch-loads/${loadId}/remove-bale/`, { method: "POST", body: JSON.stringify({ item_id: itemId }) }),
   closeDispatchLoad: (loadId: number) => request(`/dispatch-loads/${loadId}/close/`, { method: "POST" }),
+
+  // REJECTED BALES
+  listRejectionCodes: () => request("/rejection-codes/"),
+  createRejectionCode: (data: Record<string, unknown>) => request("/rejection-codes/", { method: "POST", body: JSON.stringify(data) }),
+  updateRejectionCode: (id: number, data: Record<string, unknown>) => request(`/rejection-codes/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+
+  lookupRejectedBale: (ticket_number: string) => request(`/rejected-bales/lookup/?ticket_number=${encodeURIComponent(ticket_number)}`),
+  rejectBale: (bale: number, rejection_code: number) =>
+    request("/rejected-bales/reject/", { method: "POST", body: JSON.stringify({ bale, rejection_code }) }),
+  listRejectedToday: () => request("/rejected-bales/today/"),
 };

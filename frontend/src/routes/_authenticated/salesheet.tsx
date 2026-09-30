@@ -32,7 +32,11 @@ type Mismatch = {
   resolved_price_per_kg: string | null; is_resolved: boolean;
 };
 
-type PreviewRow = { bale_id: number; group_number: number; lot_number: number; mass: number; buyer_grade: string; price_per_kg: string; value: string };
+type PreviewRow = {
+  bale_id: number; group_number: number; lot_number: number; mass: number;
+  buyer_grade: string; price_per_kg: string; value: string;
+  is_rejected: boolean; rejection_description: string | null;
+};
 type Preview = {
   delivery_note: number; grower_name: string; grower_number: string; national_id: string | null; branch: string;
   rows: PreviewRow[]; total_mass: number; gross_value: string;
@@ -50,6 +54,7 @@ type SalesheetRecord = {
   total_mass: number; gross_value: string; statutory_deductions_total: string; farmer_deductions_total: string;
   total_deductions: string; net_value: string; usd_portion: string; zig_portion: string; bales_incomplete: boolean;
   deduction_lines: { id: number; label: string; amount: string; usd_amount: string; zig_amount: string; category: string }[];
+  bale_lines: PreviewRow[];
   generated_at: string; recalculated_at: string | null; is_editable: boolean;
 };
 
@@ -155,25 +160,25 @@ function Salesheet() {
     ?? preview?.statutory_lines.map((l, i) => ({ id: i, label: l.label, amount: l.amount, usd_amount: l.usd_amount, zig_amount: l.zig_amount })) ?? [];
   const farmerLines = existingSalesheet?.deduction_lines.filter((l) => l.category === "farmer")
     ?? preview?.farmer_lines.map((l, i) => ({ id: i, label: l.label, amount: l.amount, usd_amount: l.usd_amount, zig_amount: l.zig_amount })) ?? [];
-  const display = existingSalesheet
-    ? {
-        grower_name: existingSalesheet.grower_name, grower_number: existingSalesheet.grower_number,
-        national_id: existingSalesheet.national_id, sale_date: existingSalesheet.sale_date_display,
-        exchange_rate: existingSalesheet.exchange_rate, reference_number: existingSalesheet.reference_number,
-        total_mass: existingSalesheet.total_mass, gross_value: existingSalesheet.gross_value,
-        total_deductions: existingSalesheet.total_deductions, net_value: existingSalesheet.net_value,
-        usd_portion: existingSalesheet.usd_portion, zig_portion: existingSalesheet.zig_portion,
-        rows: null as PreviewRow[] | null,
-      }
-    : preview
-    ? {
-        grower_name: preview.grower_name, grower_number: preview.grower_number, national_id: preview.national_id,
-        sale_date: "—", exchange_rate: "—", reference_number: "Not yet generated",
-        total_mass: preview.total_mass, gross_value: preview.gross_value, total_deductions: preview.total_deductions,
-        net_value: preview.net_value, usd_portion: preview.usd_portion, zig_portion: preview.zig_portion,
-        rows: preview.rows,
-      }
-    : null;
+const display = existingSalesheet
+  ? {
+      grower_name: existingSalesheet.grower_name, grower_number: existingSalesheet.grower_number,
+      national_id: existingSalesheet.national_id, sale_date: existingSalesheet.sale_date_display,
+      exchange_rate: existingSalesheet.exchange_rate, reference_number: existingSalesheet.reference_number,
+      total_mass: existingSalesheet.total_mass, gross_value: existingSalesheet.gross_value,
+      total_deductions: existingSalesheet.total_deductions, net_value: existingSalesheet.net_value,
+      usd_portion: existingSalesheet.usd_portion, zig_portion: existingSalesheet.zig_portion,
+      rows: existingSalesheet.bale_lines,
+    }
+  : preview
+  ? {
+      grower_name: preview.grower_name, grower_number: preview.grower_number, national_id: preview.national_id,
+      sale_date: "—", exchange_rate: "—", reference_number: "Not yet generated",
+      total_mass: preview.total_mass, gross_value: preview.gross_value, total_deductions: preview.total_deductions,
+      net_value: preview.net_value, usd_portion: preview.usd_portion, zig_portion: preview.zig_portion,
+      rows: preview.rows,
+    }
+  : null;
 
   return (
     <AppShell>
@@ -365,13 +370,20 @@ function Salesheet() {
                   </TableRow></TableHeader>
                   <TableBody>
                     {display.rows.map((r) => (
-                      <TableRow key={r.bale_id}>
+                      <TableRow key={r.bale_id} className={r.is_rejected ? "bg-destructive/5" : ""}>
                         <TableCell>{r.group_number}</TableCell>
                         <TableCell>{r.lot_number}</TableCell>
                         <TableCell className="text-right font-mono">{r.mass}</TableCell>
-                        <TableCell>{r.buyer_grade}</TableCell>
-                        <TableCell className="text-right font-mono">${parseFloat(r.price_per_kg).toFixed(2)}</TableCell>
-                        <TableCell className="text-right font-mono font-medium">{fUSD(r.value)}</TableCell>
+                        <TableCell>
+                          {r.is_rejected ? (
+                            <div className="flex items-center gap-1.5">
+                              <Badge variant="outline" className="text-destructive border-destructive/40 font-normal">Rejected</Badge>
+                              <span className="text-xs text-muted-foreground">{r.rejection_description}</span>
+                            </div>
+                          ) : r.buyer_grade}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{r.is_rejected ? "—" : `$${parseFloat(r.price_per_kg).toFixed(2)}`}</TableCell>
+                        <TableCell className={`text-right font-mono font-medium ${r.is_rejected ? "text-destructive" : ""}`}>{fUSD(r.value)}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="bg-muted/40 font-medium">

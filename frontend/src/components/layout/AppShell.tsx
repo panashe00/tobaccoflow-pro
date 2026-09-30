@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate, useRouteContext } from "@tanstack/react
 import {
   LayoutDashboard, FileText, Scale, Receipt, ScanLine, CheckCircle2,
   FileSpreadsheet, Truck, Settings, BarChart3, Users, LogOut, Search,
-  Bell, ChevronDown, Leaf, Sprout,
+  Bell, ChevronDown, Leaf, Sprout, XCircle, Trash2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,11 @@ const NAV_ADMIN = [
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/users", label: "User Management", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },
+];
+
+const NAV_TECH = [
+  { to: "/rejected-bales", label: "Rejected Bales", icon: XCircle },
+  { to: "/delete-tickets", label: "Delete Tickets", icon: Trash2 },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -92,6 +97,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">Administration</div>
               <div className="space-y-0.5">
                 {NAV_ADMIN.map((n) => {
+                  const active = loc.pathname === n.to;
+                  return (
+                    <Link key={n.to} to={n.to}
+                      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors ${
+                        active ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50"
+                      }`}>
+                      <n.icon className="size-4" />{n.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {user.role === "admin" && (
+            <div>
+              <div className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">Data Integrity</div>
+              <div className="space-y-0.5">
+                {NAV_TECH.map((n) => {
                   const active = loc.pathname === n.to;
                   return (
                     <Link key={n.to} to={n.to}

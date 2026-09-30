@@ -50,6 +50,9 @@ class BaleProcessingViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
+        if hasattr(bale, 'rejection'):
+            return Response({'detail': 'This bale has been rejected and cannot be processed.'}, status=status.HTTP_400_BAD_REQUEST)
+
         existing = BaleProcessing.objects.filter(bale=bale).first()
 
         return Response({

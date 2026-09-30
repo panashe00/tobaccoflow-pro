@@ -9,13 +9,13 @@ from rest_framework.permissions import IsAuthenticated
 
 from deliverynotes.models import DeliveryNote
 from weighing.models import Bale
-from .models import Salesheet, SalesheetDeductionLine, SalesheetCounter
+from .models import Salesheet, SalesheetDeductionLine, SalesheetCounter, SalesheetBaleLine
 from .serializers import SalesheetSerializer
 from .services import compute_salesheet
 
 
 def _save_lines(salesheet, result):
-    lines = [
+    deduction_lines = [
         SalesheetDeductionLine(
             salesheet=salesheet, label=l['label'], amount=l['amount'],
             usd_amount=l['usd_amount'], zig_amount=l['zig_amount'], category='statutory',
@@ -28,8 +28,18 @@ def _save_lines(salesheet, result):
         )
         for l in result['farmer_lines']
     ]
-    SalesheetDeductionLine.objects.bulk_create(lines)
+    SalesheetDeductionLine.objects.bulk_create(deduction_lines)
 
+    bale_lines = [
+        SalesheetBaleLine(
+            salesheet=salesheet, bale_id=r['bale_id'], group_number=r['group_number'],
+            lot_number=r['lot_number'], mass=r['mass'], buyer_grade=r['buyer_grade'],
+            price_per_kg=r['price_per_kg'], value=r['value'],
+            is_rejected=r['is_rejected'], rejection_description=r['rejection_description'],
+        )
+        for r in result['rows']
+    ]
+    SalesheetBaleLine.objects.bulk_create(bale_lines)
 
 def _serialize_preview(dn, result):
     return {
@@ -40,8 +50,9 @@ def _serialize_preview(dn, result):
         'branch': dn.branch,
         'rows': [
             {'bale_id': r['bale_id'], 'group_number': r['group_number'], 'lot_number': r['lot_number'],
-             'mass': r['mass'], 'buyer_grade': r['buyer_grade'],
-             'price_per_kg': str(r['price_per_kg']), 'value': str(r['value'])}
+            'mass': r['mass'], 'buyer_grade': r['buyer_grade'],
+            'price_per_kg': str(r['price_per_kg']), 'value': str(r['value']),
+            'is_rejected': r['is_rejected'], 'rejection_description': r['rejection_description']}
             for r in result['rows']
         ],
         'total_mass': result['total_mass'], 'gross_value': str(result['gross_value']),
@@ -227,6 +238,7 @@ class SalesheetViewSet(viewsets.ReadOnlyModelViewSet):
             salesheet.recalculated_at = timezone.now()
             salesheet.save()
             salesheet.deduction_lines.all().delete()
+            salesheet.bale_lines.all().delete()
             _save_lines(salesheet, result)
 
         return Response(SalesheetSerializer(salesheet).data)
