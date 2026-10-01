@@ -23,6 +23,7 @@ import { Route as AuthenticatedPreProcessingRouteImport } from './routes/_authen
 import { Route as AuthenticatedGrowersRouteImport } from './routes/_authenticated/growers'
 import { Route as AuthenticatedDispatchRouteImport } from './routes/_authenticated/dispatch'
 import { Route as AuthenticatedDeliveryNotesRouteImport } from './routes/_authenticated/delivery-notes'
+import { Route as AuthenticatedDeleteTicketsRouteImport } from './routes/_authenticated/delete-tickets'
 import { Route as AuthenticatedDeductionsRouteImport } from './routes/_authenticated/deductions'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 
@@ -99,6 +100,12 @@ const AuthenticatedDeliveryNotesRoute =
     path: '/delivery-notes',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDeleteTicketsRoute =
+  AuthenticatedDeleteTicketsRouteImport.update({
+    id: '/delete-tickets',
+    path: '/delete-tickets',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDeductionsRoute = AuthenticatedDeductionsRouteImport.update({
   id: '/deductions',
   path: '/deductions',
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/deductions': typeof AuthenticatedDeductionsRoute
+  '/delete-tickets': typeof AuthenticatedDeleteTicketsRoute
   '/delivery-notes': typeof AuthenticatedDeliveryNotesRoute
   '/dispatch': typeof AuthenticatedDispatchRoute
   '/growers': typeof AuthenticatedGrowersRoute
@@ -131,6 +139,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/deductions': typeof AuthenticatedDeductionsRoute
+  '/delete-tickets': typeof AuthenticatedDeleteTicketsRoute
   '/delivery-notes': typeof AuthenticatedDeliveryNotesRoute
   '/dispatch': typeof AuthenticatedDispatchRoute
   '/growers': typeof AuthenticatedGrowersRoute
@@ -150,6 +159,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/deductions': typeof AuthenticatedDeductionsRoute
+  '/_authenticated/delete-tickets': typeof AuthenticatedDeleteTicketsRoute
   '/_authenticated/delivery-notes': typeof AuthenticatedDeliveryNotesRoute
   '/_authenticated/dispatch': typeof AuthenticatedDispatchRoute
   '/_authenticated/growers': typeof AuthenticatedGrowersRoute
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/deductions'
+    | '/delete-tickets'
     | '/delivery-notes'
     | '/dispatch'
     | '/growers'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/deductions'
+    | '/delete-tickets'
     | '/delivery-notes'
     | '/dispatch'
     | '/growers'
@@ -204,6 +216,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_authenticated/dashboard'
     | '/_authenticated/deductions'
+    | '/_authenticated/delete-tickets'
     | '/_authenticated/delivery-notes'
     | '/_authenticated/dispatch'
     | '/_authenticated/growers'
@@ -323,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeliveryNotesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/delete-tickets': {
+      id: '/_authenticated/delete-tickets'
+      path: '/delete-tickets'
+      fullPath: '/delete-tickets'
+      preLoaderRoute: typeof AuthenticatedDeleteTicketsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/deductions': {
       id: '/_authenticated/deductions'
       path: '/deductions'
@@ -343,6 +363,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDeductionsRoute: typeof AuthenticatedDeductionsRoute
+  AuthenticatedDeleteTicketsRoute: typeof AuthenticatedDeleteTicketsRoute
   AuthenticatedDeliveryNotesRoute: typeof AuthenticatedDeliveryNotesRoute
   AuthenticatedDispatchRoute: typeof AuthenticatedDispatchRoute
   AuthenticatedGrowersRoute: typeof AuthenticatedGrowersRoute
@@ -360,6 +381,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDeductionsRoute: AuthenticatedDeductionsRoute,
+  AuthenticatedDeleteTicketsRoute: AuthenticatedDeleteTicketsRoute,
   AuthenticatedDeliveryNotesRoute: AuthenticatedDeliveryNotesRoute,
   AuthenticatedDispatchRoute: AuthenticatedDispatchRoute,
   AuthenticatedGrowersRoute: AuthenticatedGrowersRoute,

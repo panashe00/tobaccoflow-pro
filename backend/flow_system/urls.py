@@ -34,4 +34,5 @@ urlpatterns = [
     path('api/', include('salesheets.urls')),
     path('api/', include('dispatch.urls')),
     path('api/', include('rejectedbales.urls')),
+    path('api/', include('deletedtickets.urls')),
 ]

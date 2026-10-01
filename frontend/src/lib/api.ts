@@ -225,4 +225,11 @@ export const api = {
   rejectBale: (bale: number, rejection_code: number) =>
     request("/rejected-bales/reject/", { method: "POST", body: JSON.stringify({ bale, rejection_code }) }),
   listRejectedToday: () => request("/rejected-bales/today/"),
+
+  // DELETED TICKETS
+  lookupDeletableTicket: (ticket_number: string) =>
+    request(`/deleted-tickets/lookup/?ticket_number=${encodeURIComponent(ticket_number)}`),
+  deleteTicket: (bale: number, reason: string) =>
+    request("/deleted-tickets/delete_ticket/", { method: "POST", body: JSON.stringify({ bale, reason }) }),
+  listDeletedToday: () => request("/deleted-tickets/today/"),
 };
