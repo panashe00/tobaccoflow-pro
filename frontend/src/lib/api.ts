@@ -215,6 +215,7 @@ export const api = {
   removeBaleFromLoad: (loadId: number, itemId: number) =>
     request(`/dispatch-loads/${loadId}/remove-bale/`, { method: "POST", body: JSON.stringify({ item_id: itemId }) }),
   closeDispatchLoad: (loadId: number) => request(`/dispatch-loads/${loadId}/close/`, { method: "POST" }),
+  listAllDispatchLoads: () => request("/dispatch-loads/"),
 
   // REJECTED BALES
   listRejectionCodes: () => request("/rejection-codes/"),
@@ -232,4 +233,22 @@ export const api = {
   deleteTicket: (bale: number, reason: string) =>
     request("/deleted-tickets/delete_ticket/", { method: "POST", body: JSON.stringify({ bale, reason }) }),
   listDeletedToday: () => request("/deleted-tickets/today/"),
+
+  // PRINT SETTINGS
+  getPrintSettings: () => request("/print-settings/"),
+  updatePrintSettings: async (formData: FormData) => {
+    const res = await fetch(`${API_BASE}/print-settings/`, {
+      method: "PATCH",
+      credentials: "include",
+      body: formData,
+    });
+    if (!res.ok) {
+      let body: any = null;
+      try { body = await res.json(); } catch {}
+      throw new ApiError(extractErrorMessage(body), res.status, body);
+    }
+    return res.json();
+  },
+  getDeliveryNote: (id: number) => request(`/delivery-notes/${id}/`),
+  getDispatchLoad: (id: number) => request(`/dispatch-loads/${id}/`),
 };

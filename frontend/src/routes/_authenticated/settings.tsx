@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppShell, PageHeader } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { Plus, Upload, MoreHorizontal, Loader2 } from "lucide-react";
 import { BRANCHES, ROLES, EXCHANGE_RATE, SALE_DATE } from "@/lib/dummy-data";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings · TIMS" }] }),
@@ -707,6 +708,87 @@ function RejectionCodesTab() {
   );
 }
 
+// ---------- Printouts Settings -------------
+type ApiPrintSettings = { company_name: string; address: string; phone: string; email: string; logo: string | null; footer_text: string };
+
+function PrintingTab() {
+  const queryClient = useQueryClient();
+  const { data } = useQuery<ApiPrintSettings>({ queryKey: ["print-settings"], queryFn: api.getPrintSettings });
+  const [form, setForm] = useState({ company_name: "", address: "", phone: "", email: "", footer_text: "" });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (data) {
+      setForm({
+        company_name: data.company_name || "", address: data.address || "",
+        phone: data.phone || "", email: data.email || "", footer_text: data.footer_text || "",
+      });
+      setLogoPreview(data.logo);
+    }
+  }, [data]);
+
+  const save = useMutation({
+    mutationFn: () => {
+      const fd = new FormData();
+      fd.append("company_name", form.company_name);
+      fd.append("address", form.address);
+      fd.append("phone", form.phone);
+      fd.append("email", form.email);
+      fd.append("footer_text", form.footer_text);
+      if (logoFile) fd.append("logo", logoFile);
+      return api.updatePrintSettings(fd);
+    },
+    onSuccess: () => {
+      toast.success("Printout settings saved");
+      queryClient.invalidateQueries({ queryKey: ["print-settings"] });
+      setLogoFile(null);
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to save"),
+  });
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-sm">Printout Branding</CardTitle></CardHeader>
+      <CardContent className="space-y-4 max-w-xl">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Company Logo</Label>
+          <div className="flex items-center gap-3">
+            {logoPreview ? (
+              <img src={logoPreview} alt="Logo preview" className="size-16 rounded-md object-contain border" />
+            ) : (
+              <div className="size-16 rounded-md border flex items-center justify-center text-xs text-muted-foreground">No logo</div>
+            )}
+            <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+            <Button type="button" variant="outline" size="sm" onClick={() => fileInput.current?.click()}>Upload Logo</Button>
+          </div>
+        </div>
+        <div className="space-y-1.5"><Label className="text-xs">Company Name</Label><Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} /></div>
+        <div className="space-y-1.5"><Label className="text-xs">Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5"><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label className="text-xs">Email</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Footer Note (shown on all printouts)</Label>
+          <Textarea rows={2} value={form.footer_text} onChange={(e) => setForm({ ...form, footer_text: e.target.value })} />
+        </div>
+        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          {save.isPending && <Loader2 className="size-4 animate-spin" />}Save Printout Settings
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ---------- Main Settings component ----------
 
 function Settings() {
@@ -727,6 +809,7 @@ function Settings() {
             <TabsTrigger value="hessian-codes">Hessian Codes</TabsTrigger>
             <TabsTrigger value="ticket-books">Ticket Books</TabsTrigger>
             <TabsTrigger value="rejection-codes">Rejection Codes</TabsTrigger>
+            <TabsTrigger value="printing">Printouts</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -789,6 +872,7 @@ function Settings() {
           <TabsContent value="hessian-codes"><HessianCodesTab /></TabsContent>
           <TabsContent value="ticket-books"><TicketBooksTab /></TabsContent>
           <TabsContent value="rejection-codes"><RejectionCodesTab /></TabsContent>
+          <TabsContent value="printing"><PrintingTab /></TabsContent>
         </Tabs>
       </div>
     </AppShell>

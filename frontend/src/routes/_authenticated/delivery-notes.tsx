@@ -264,6 +264,7 @@ function DeliveryNotes() {
 
   const openCreate = () => { setFormSession((s) => s + 1); setOpen(true); };
 
+
   return (
     <AppShell>
       <div className="p-6 max-w-[1600px] mx-auto">
@@ -327,7 +328,7 @@ function DeliveryNotes() {
                       <TableCell className="font-mono text-xs">{d.date_received}</TableCell>
                       <TableCell><StatusBadge status={d.status} /></TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => toast.success("Sent to printer")}>
+                        <Button variant="ghost" size="sm" onClick={() => window.open(`/print/delivery-note/${d.id}`, "_blank")}>
                           <Printer className="size-3.5" />
                         </Button>
                       </TableCell>

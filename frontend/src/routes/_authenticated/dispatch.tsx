@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/dispatch")({
 type LoadItem = { id: number; bale: number; ticket_number: string; grower_number: string; buyer_grade: string | null; mass: number; scanned_at: string };
 type Load = {
   id: number; truck_registration: string; driver_name: string; destination: string; dispatch_date: string;
-  is_open: boolean; items: LoadItem[]; bale_count: number; total_mass: number;
+  is_open: boolean; opened_at: string; items: LoadItem[]; bale_count: number; total_mass: number;
 };
 
 function fNum(n: number) { return n.toLocaleString(undefined, { maximumFractionDigits: 2 }); }
@@ -64,15 +64,16 @@ function Dispatch() {
   const queryClient = useQueryClient();
   const [activeLoad, setActiveLoad] = useState<Load | null>(null);
   const [barcode, setBarcode] = useState("");
+  const [printOpen, setPrintOpen] = useState(false);
   const barcodeRef = useRef<HTMLInputElement>(null);
 
-  const { data: openLoads = [] } = useQuery<Load[]>({ queryKey: ["open-dispatch-loads"], queryFn: api.listOpenDispatchLoads });
+  const { data: allLoads = [] } = useQuery<Load[]>({ queryKey: ["all-dispatch-loads"], queryFn: api.listAllDispatchLoads });
 
   useEffect(() => { if (activeLoad?.is_open) barcodeRef.current?.focus(); }, [activeLoad]);
 
   const refreshActiveLoad = (load: Load) => {
     setActiveLoad(load);
-    queryClient.invalidateQueries({ queryKey: ["open-dispatch-loads"] });
+    queryClient.invalidateQueries({ queryKey: ["all-dispatch-loads"] });
   };
 
   const addBale = useMutation({
@@ -98,16 +99,10 @@ function Dispatch() {
 
   const closeLoad = useMutation({
     mutationFn: () => api.closeDispatchLoad(activeLoad!.id),
-    onSuccess: (data: Load) => {
-      toast.success("Load closed");
-      refreshActiveLoad(data);
-    },
+    onSuccess: (data: Load) => { toast.success("Load closed"); refreshActiveLoad(data); },
     onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to close load"),
   });
 
-  // Auto-submit as soon as a full barcode has been scanned — no Enter required.
-  // Scanners deliver keystrokes far faster than a human types, so a short pause-based
-  // debounce distinguishes "still typing" from "scan finished" without needing Enter.
   useEffect(() => {
     if (!barcode || !activeLoad?.is_open) return;
     const timeout = setTimeout(() => {
@@ -122,25 +117,35 @@ function Dispatch() {
         <PageHeader
           title="Dispatch"
           description="Scan barcodes while loading the truck. Generates printable dispatch manifest."
-          actions={activeLoad ? <Button variant="outline" onClick={() => window.print()}><Printer className="size-4" />Print Manifest</Button> : undefined}
+          actions={activeLoad ? (
+            <Button variant="outline" onClick={() => window.open(`/print/dispatch/${activeLoad.id}`, "_blank")}>
+              <Printer className="size-4" />Print Manifest
+            </Button>
+          ) : undefined}
         />
 
+  
         {!activeLoad && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <NewLoadForm onCreated={setActiveLoad} />
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Open Loads</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Loads</CardTitle></CardHeader>
               <CardContent className="p-0">
                 <Table>
-                  <TableHeader><TableRow><TableHead>Truck</TableHead><TableHead>Destination</TableHead><TableHead className="text-right">Bales</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow>
+                    <TableHead>Opened</TableHead><TableHead>Truck</TableHead><TableHead>Destination</TableHead>
+                    <TableHead className="text-right">Bales</TableHead><TableHead>Status</TableHead><TableHead></TableHead>
+                  </TableRow></TableHeader>
                   <TableBody>
-                    {openLoads.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6 text-sm">No open loads</TableCell></TableRow>}
-                    {openLoads.map((l) => (
+                    {allLoads.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6 text-sm">No loads yet</TableCell></TableRow>}
+                    {allLoads.map((l) => (
                       <TableRow key={l.id}>
+                        <TableCell className="font-mono text-xs">{new Date(l.opened_at).toLocaleDateString()}</TableCell>
                         <TableCell className="font-mono text-xs">{l.truck_registration}</TableCell>
                         <TableCell className="text-sm">{l.destination}</TableCell>
                         <TableCell className="text-right font-mono">{l.bale_count}</TableCell>
-                        <TableCell className="text-right"><Button size="sm" variant="outline" onClick={() => setActiveLoad(l)}>Continue</Button></TableCell>
+                        <TableCell><Badge variant={l.is_open ? "default" : "outline"}>{l.is_open ? "Open" : "Closed"}</Badge></TableCell>
+                        <TableCell className="text-right"><Button size="sm" variant="outline" onClick={() => setActiveLoad(l)}>{l.is_open ? "Continue" : "View"}</Button></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -171,7 +176,7 @@ function Dispatch() {
               </CardContent></Card>
             </div>
 
-            <div className="flex items-center justify-between mb-3 no-print">
+            <div className="flex items-center justify-between mb-3">
               <Badge variant={activeLoad.is_open ? "default" : "outline"}>{activeLoad.is_open ? "Open" : "Closed"}</Badge>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setActiveLoad(null)}>Back to Loads</Button>
@@ -212,9 +217,9 @@ function Dispatch() {
                 </CardContent>
               </Card>
 
-              <Card className="lg:col-span-2 print-area">
+              <Card className="lg:col-span-2">
                 <CardHeader className="pb-2 flex-row items-center justify-between">
-                  <CardTitle className="text-sm">Dispatch Manifest</CardTitle>
+                  <CardTitle className="text-sm">Bales on This Load</CardTitle>
                   <Badge variant="outline" className="font-mono">{activeLoad.bale_count} bales · {fNum(activeLoad.total_mass)} kg</Badge>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -222,7 +227,7 @@ function Dispatch() {
                     <TableHeader><TableRow>
                       <TableHead>#</TableHead><TableHead>Ticket</TableHead><TableHead>Grower</TableHead>
                       <TableHead>Grade</TableHead><TableHead className="text-right">Mass (kg)</TableHead><TableHead>Time</TableHead>
-                      <TableHead className="no-print"></TableHead>
+                      <TableHead></TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
                       {activeLoad.items.length === 0 && (
@@ -236,7 +241,7 @@ function Dispatch() {
                           <TableCell>{item.buyer_grade ?? "—"}</TableCell>
                           <TableCell className="text-right font-mono">{item.mass}</TableCell>
                           <TableCell className="font-mono text-xs">{new Date(item.scanned_at).toTimeString().slice(0, 5)}</TableCell>
-                          <TableCell className="no-print">
+                          <TableCell>
                             {activeLoad.is_open && (
                               <Button variant="ghost" size="sm" onClick={() => removeBale.mutate(item.id)}>
                                 <X className="size-3.5 text-destructive" />

@@ -122,7 +122,61 @@
 }
 
 @media print {
-  .no-print { display: none !important; }
-  body { background: white !important; }
-  .print-area { box-shadow: none !important; border: none !important; }
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide everything by default; only .print-area content is revealed below. */
+  body * {
+    visibility: hidden !important;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+  }
+
+  .print-area {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Explicitly remove action buttons etc. even inside a visible print-area. */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reset any scroll/clip/transform constraints on every element — dialogs in
+     particular ship with max-height + overflow-y-auto (for on-screen scrolling)
+     and a centering transform, both of which silently clip or displace content
+     that would otherwise print fine. None of this matters once we're printing. */
+  * {
+    overflow: visible !important;
+    max-height: none !important;
+    transform: none !important;
+  }
+
+  @page {
+    margin: 10mm;
+  }
+
+  .print-compact { font-size: 11px !important; }
+  .print-compact .text-lg { font-size: 14px !important; }
+  .print-compact .text-2xl { font-size: 16px !important; }
+  .print-compact .text-sm { font-size: 11px !important; }
+  .print-compact .text-xs { font-size: 10px !important; }
+  .print-compact .text-\[11px\] { font-size: 9px !important; }
+  .print-compact .text-\[10px\] { font-size: 9px !important; }
+  .print-compact table th,
+  .print-compact table td { padding-top: 2px !important; padding-bottom: 2px !important; }
+  .print-compact .p-8 { padding: 14px !important; }
+  .print-compact .p-4 { padding: 8px !important; }
+  .print-compact .mb-6 { margin-bottom: 10px !important; }
+  .print-compact .mt-8 { margin-top: 10px !important; }
+  .print-compact .mt-12 { margin-top: 14px !important; }
+  .print-compact .gap-8 { gap: 10px !important; }
+  .print-compact .space-y-2 > * + * { margin-top: 3px !important; }
+  .print-compact .h-10 { height: 24px !important; }
 }

@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Printer, FileDown, AlertTriangle, RefreshCw, Leaf, Loader2, ArrowRight } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { PrintHeader, PrintFooter } from "@/components/print/PrintBranding"
 
 export const Route = createFileRoute("/_authenticated/salesheet")({
   head: () => ({ meta: [{ title: "Salesheet Generation · TIMS" }] }),
@@ -342,17 +343,11 @@ const display = existingSalesheet
         )}
 
         {display && (
-          <Card className="print-area">
+          <Card className="print-area print-compact">
             <CardContent className="p-8">
-              <div className="flex items-start justify-between border-b pb-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <div className="size-12 rounded-md bg-primary flex items-center justify-center"><Leaf className="size-6 text-primary-foreground" /></div>
-                  <div>
-                    <div className="font-semibold text-lg">TIMS · Salesheet</div>
-                    <div className="text-xs text-muted-foreground">{display.reference_number}</div>
-                  </div>
-                </div>
-                <div className="text-right text-xs space-y-0.5">
+              <PrintHeader documentTitle="Salesheet" reference={display.reference_number} />
+              <div className="flex justify-end text-right text-xs space-y-0.5 -mt-4 mb-6">
+                <div className="space-y-0.5">
                   <div className="flex gap-4"><span className="text-muted-foreground">Sale Date:</span><span className="font-mono font-medium">{display.sale_date}</span></div>
                   <div className="flex gap-4"><span className="text-muted-foreground">Exchange Rate:</span><span className="font-mono font-medium">{display.exchange_rate === "—" ? "—" : `USD 1 = ZIG ${display.exchange_rate}`}</span></div>
                   <div className="flex gap-4"><span className="text-muted-foreground">Grower #:</span><span className="font-mono font-medium">{display.grower_number}</span></div>
@@ -451,6 +446,8 @@ const display = existingSalesheet
                   <div key={s}><div className="border-b border-foreground/40 h-10" /><div className="text-xs text-muted-foreground mt-1">{s} · Signature & Date</div></div>
                 ))}
               </div>
+
+              <PrintFooter />
             </CardContent>
           </Card>
         )}

@@ -26,6 +26,8 @@ import { Route as AuthenticatedDeliveryNotesRouteImport } from './routes/_authen
 import { Route as AuthenticatedDeleteTicketsRouteImport } from './routes/_authenticated/delete-tickets'
 import { Route as AuthenticatedDeductionsRouteImport } from './routes/_authenticated/deductions'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as PrintDispatchIdRouteImport } from './routes/print/dispatch.$id'
+import { Route as PrintDeliveryNoteIdRouteImport } from './routes/print/delivery-note.$id'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -116,6 +118,16 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const PrintDispatchIdRoute = PrintDispatchIdRouteImport.update({
+  id: '/print/dispatch/$id',
+  path: '/print/dispatch/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrintDeliveryNoteIdRoute = PrintDeliveryNoteIdRouteImport.update({
+  id: '/print/delivery-note/$id',
+  path: '/print/delivery-note/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -134,6 +146,8 @@ export interface FileRoutesByFullPath {
   '/transporters': typeof AuthenticatedTransportersRoute
   '/users': typeof AuthenticatedUsersRoute
   '/weighing': typeof AuthenticatedWeighingRoute
+  '/print/delivery-note/$id': typeof PrintDeliveryNoteIdRoute
+  '/print/dispatch/$id': typeof PrintDispatchIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -152,6 +166,8 @@ export interface FileRoutesByTo {
   '/transporters': typeof AuthenticatedTransportersRoute
   '/users': typeof AuthenticatedUsersRoute
   '/weighing': typeof AuthenticatedWeighingRoute
+  '/print/delivery-note/$id': typeof PrintDeliveryNoteIdRoute
+  '/print/dispatch/$id': typeof PrintDispatchIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -172,6 +188,8 @@ export interface FileRoutesById {
   '/_authenticated/transporters': typeof AuthenticatedTransportersRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/weighing': typeof AuthenticatedWeighingRoute
+  '/print/delivery-note/$id': typeof PrintDeliveryNoteIdRoute
+  '/print/dispatch/$id': typeof PrintDispatchIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -192,6 +210,8 @@ export interface FileRouteTypes {
     | '/transporters'
     | '/users'
     | '/weighing'
+    | '/print/delivery-note/$id'
+    | '/print/dispatch/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -210,6 +230,8 @@ export interface FileRouteTypes {
     | '/transporters'
     | '/users'
     | '/weighing'
+    | '/print/delivery-note/$id'
+    | '/print/dispatch/$id'
   id:
     | '__root__'
     | '/'
@@ -229,11 +251,15 @@ export interface FileRouteTypes {
     | '/_authenticated/transporters'
     | '/_authenticated/users'
     | '/_authenticated/weighing'
+    | '/print/delivery-note/$id'
+    | '/print/dispatch/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  PrintDeliveryNoteIdRoute: typeof PrintDeliveryNoteIdRoute
+  PrintDispatchIdRoute: typeof PrintDispatchIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -357,6 +383,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/print/dispatch/$id': {
+      id: '/print/dispatch/$id'
+      path: '/print/dispatch/$id'
+      fullPath: '/print/dispatch/$id'
+      preLoaderRoute: typeof PrintDispatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/print/delivery-note/$id': {
+      id: '/print/delivery-note/$id'
+      path: '/print/delivery-note/$id'
+      fullPath: '/print/delivery-note/$id'
+      preLoaderRoute: typeof PrintDeliveryNoteIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -403,6 +443,8 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  PrintDeliveryNoteIdRoute: PrintDeliveryNoteIdRoute,
+  PrintDispatchIdRoute: PrintDispatchIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
