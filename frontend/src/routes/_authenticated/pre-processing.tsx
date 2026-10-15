@@ -10,8 +10,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Scan, Search, Loader2, CheckCircle2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { requireModule } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/pre-processing")({
+  beforeLoad: ({ context }) => requireModule(context.user, "pre_processing"),
   head: () => ({ meta: [{ title: "Ticket Pre-Processing · TIMS" }] }),
   component: PreProcessing,
 });

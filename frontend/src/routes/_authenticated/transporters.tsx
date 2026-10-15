@@ -15,8 +15,10 @@ import {
 import { Plus, Search, MoreHorizontal, Loader2, FileSpreadsheet, FileText, Printer } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { requireModule } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/transporters")({
+  beforeLoad: ({ context }) => requireModule(context.user, "transporters"),
   head: () => ({ meta: [{ title: "Transporters · TIMS" }] }),
   component: Transporters,
 });

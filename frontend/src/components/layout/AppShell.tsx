@@ -3,6 +3,7 @@ import {
   LayoutDashboard, FileText, Scale, Receipt, ScanLine, CheckCircle2,
   FileSpreadsheet, Truck, Settings, BarChart3, Users, LogOut, Search,
   Bell, ChevronDown, Leaf, Sprout, XCircle, Trash2,
+  Container,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,9 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { SALE_DATE, EXCHANGE_RATE } from "@/lib/dummy-data";
 import { api } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { isBranchAdmin } from "@/lib/access";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrator",
@@ -23,25 +25,27 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/delivery-notes", label: "Delivery Notes", icon: FileText },
-  { to: "/weighing", label: "Bale Weighing", icon: Scale },
-  { to: "/deductions", label: "Deductions", icon: Receipt },
-  { to: "/pre-processing", label: "Ticket Pre-Processing", icon: ScanLine },
-  { to: "/processing", label: "Bale Processing", icon: CheckCircle2 },
-  { to: "/salesheet", label: "Salesheet Generation", icon: FileSpreadsheet },
-  { to: "/dispatch", label: "Dispatch", icon: Truck },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, module: null },
+  { to: "/growers", label: "Growers", icon: Sprout, module: "growers" },
+  { to: "/transporters", label: "Transporters", icon: Container, module: "transporters" },
+  { to: "/delivery-notes", label: "Delivery Notes", icon: FileText, module: "delivery_notes" },
+  { to: "/weighing", label: "Bale Weighing", icon: Scale, module: "weighing" },
+  { to: "/deductions", label: "Deductions", icon: Receipt, module: "deductions" },
+  { to: "/pre-processing", label: "Ticket Pre-Processing", icon: ScanLine, module: "pre_processing" },
+  { to: "/processing", label: "Bale Processing", icon: CheckCircle2, module: "processing" },
+  { to: "/salesheet", label: "Salesheet Generation", icon: FileSpreadsheet, module: "salesheet" },
+  { to: "/dispatch", label: "Dispatch", icon: Truck, module: "dispatch" },
 ];
 
 const NAV_ADMIN = [
-  { to: "/reports", label: "Reports", icon: BarChart3 },
-  { to: "/users", label: "User Management", icon: Users },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/reports", label: "Reports", icon: BarChart3, module: "reports" },
+  { to: "/users", label: "User Management", icon: Users, module: "admin" },
+  { to: "/settings", label: "Settings", icon: Settings, module: "admin" },
 ];
 
 const NAV_TECH = [
-  { to: "/rejected-bales", label: "Rejected Bales", icon: XCircle },
-  { to: "/delete-tickets", label: "Delete Tickets", icon: Trash2 },
+  { to: "/rejected-bales", label: "Rejected Bales", icon: XCircle, module: "admin" },
+  { to: "/delete-tickets", label: "Delete Tickets", icon: Trash2, module: "admin" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -61,6 +65,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const admin = isBranchAdmin(user);
+  const canSee = (m: string | null) => !m || (m === "admin" ? admin : admin || user.permissions.includes(m));
+  const navItems = NAV.filter((n) => canSee(n.module));
+  const adminItems = NAV_ADMIN.filter((n) => canSee(n.module));
+
+  const { data: saleDate } = useQuery({ queryKey: ["sale-date-current"], queryFn: api.getCurrentSaleDate });
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
@@ -78,7 +89,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div>
             <div className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">Operations</div>
             <div className="space-y-0.5">
-              {NAV.map((n) => {
+              {navItems.map((n) => {
                 const active = loc.pathname === n.to || loc.pathname.startsWith(n.to + "/");
                 return (
                   <Link key={n.to} to={n.to}
@@ -96,7 +107,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div>
               <div className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">Administration</div>
               <div className="space-y-0.5">
-                {NAV_ADMIN.map((n) => {
+                {adminItems.map((n) => {
                   const active = loc.pathname === n.to;
                   return (
                     <Link key={n.to} to={n.to}
@@ -132,8 +143,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         </nav>
         <div className="px-4 py-3 border-t border-sidebar-border text-[11px] text-sidebar-foreground/60">
-          <div className="flex justify-between"><span>Sale Date</span><span className="font-mono text-sidebar-foreground/90">{SALE_DATE}</span></div>
-          <div className="flex justify-between mt-1"><span>USD/ZIG</span><span className="font-mono text-sidebar-foreground/90">{EXCHANGE_RATE.toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Sale Date</span><span className="font-mono text-sidebar-foreground/90">{saleDate?.date ?? "—"}</span></div>
+          <div className="flex justify-between mt-1"><span>USD/ZIG</span><span className="font-mono text-sidebar-foreground/90">{saleDate?.exchange_rate ?? "—"}</span></div>
         </div>
       </aside>
 
@@ -146,7 +157,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="gap-1.5 font-normal">
-              <span className="size-1.5 rounded-full bg-success" />Branch: Harare
+              <span className="size-1.5 rounded-full bg-success" />Branch: {user.branches?.[0] ?? "—"}
             </Badge>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="size-4" />

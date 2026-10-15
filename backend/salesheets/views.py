@@ -6,7 +6,8 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-
+from backend.users.permissions import module_permission
+from backend.users.scoping import in_user_branches
 from deliverynotes.models import DeliveryNote
 from weighing.models import Bale
 from .models import Salesheet, SalesheetDeductionLine, SalesheetCounter, SalesheetBaleLine
@@ -75,7 +76,7 @@ def _serialize_preview(dn, result):
 class SalesheetViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Salesheet.objects.all()
     serializer_class = SalesheetSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [module_permission('salesheets')]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -138,6 +139,8 @@ class SalesheetViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'])
     def preview(self, request):
         dn = DeliveryNote.objects.filter(pk=request.query_params.get('delivery_note')).select_related('sale_date', 'grower').first()
+        if not in_user_branches(request.user, dn.branch):
+            return Response({'detail': 'This Delivery Note does not belong to your branch.'}, status=403)
         if not dn:
             return Response({'detail': 'Delivery Note not found.'}, status=404)
         if dn.sale_date.exchange_rate is None:

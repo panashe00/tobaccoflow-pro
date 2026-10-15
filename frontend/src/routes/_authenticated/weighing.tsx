@@ -13,8 +13,10 @@ import { Printer, Scan, AlertTriangle, CheckCircle2, ArrowRight, Loader2, Gauge,
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { requireModule } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/weighing")({
+  beforeLoad: ({ context }) => requireModule(context.user, "weighing"),
   head: () => ({ meta: [{ title: "Bale Weighing · TIMS" }] }),
   component: Weighing,
 });

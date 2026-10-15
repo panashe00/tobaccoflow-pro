@@ -11,8 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Scan, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { requireModule } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/processing")({
+  beforeLoad: ({ context }) => requireModule(context.user, "processing"),
   head: () => ({ meta: [{ title: "Bale Processing · TIMS" }] }),
   component: Processing,
 });

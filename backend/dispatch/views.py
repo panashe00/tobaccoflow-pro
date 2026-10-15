@@ -2,6 +2,7 @@ from rest_framework import serializers, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from backend.users.permissions import module_permission
 from weighing.models import Bale
 from weighing.barcodes import split_and_validate_scan
 from .models import DispatchLoad, DispatchLoadBale
@@ -11,7 +12,7 @@ from .serializers import DispatchLoadSerializer
 class DispatchLoadViewSet(viewsets.ModelViewSet):
     queryset = DispatchLoad.objects.all().prefetch_related('items__bale__delivery_note__grower', 'items__bale__processing')
     serializer_class = DispatchLoadSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [module_permission('dispatch')]
 
     def get_queryset(self):
         qs = super().get_queryset()

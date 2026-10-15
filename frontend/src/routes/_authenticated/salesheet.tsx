@@ -13,8 +13,10 @@ import { Printer, FileDown, AlertTriangle, RefreshCw, Leaf, Loader2, ArrowRight 
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
 import { PrintHeader, PrintFooter } from "@/components/print/PrintBranding"
+import { requireModule } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/salesheet")({
+  beforeLoad: ({ context }) => requireModule(context.user, "salesheet"),
   head: () => ({ meta: [{ title: "Salesheet Generation · TIMS" }] }),
   component: Salesheet,
 });

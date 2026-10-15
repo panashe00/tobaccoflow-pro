@@ -15,8 +15,10 @@ import {
 import { Plus, Printer, Search, Loader2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { requireModule } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/delivery-notes")({
+  beforeLoad: ({ context }) => requireModule(context.user, "delivery_notes"),
   head: () => ({ meta: [{ title: "Delivery Notes · TIMS" }] }),
   component: DeliveryNotes,
 });

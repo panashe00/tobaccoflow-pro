@@ -19,8 +19,10 @@ import { Plus, Search, MoreHorizontal, Loader2 } from "lucide-react";
 import { BRANCHES } from "@/lib/dummy-data";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { requireAdmin } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/users")({
+  beforeLoad: ({ context }) => requireAdmin(context.user),
   head: () => ({ meta: [{ title: "User Management · TIMS" }] }),
   component: Users,
 });
@@ -52,13 +54,18 @@ const AUDIT = [
   { time: "2024-10-22 08:31", user: "rchirwa", action: "Created Delivery Note DN-2410-00234", ip: "10.0.4.12" },
 ];
 
+const { user } = Route.useRouteContext();
+const branchOptions = user.is_superuser ? BRANCHES : user.branches;
+const roleOptions = user.is_superuser ? ROLE_OPTIONS : ROLE_OPTIONS.filter((r) => r.value !== "admin");
+
+
 function BranchPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
   const toggle = (b: string) =>
     onChange(value.includes(b) ? value.filter((x) => x !== b) : [...value, b]);
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {BRANCHES.map((b) => {
+      {branchOptions.map((b: string) => {
         const active = value.includes(b);
         return (
           <button
@@ -171,7 +178,7 @@ function UserFormDialog({
             <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {ROLE_OPTIONS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                {roleOptions.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

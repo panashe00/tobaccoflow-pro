@@ -12,8 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Scan, XCircle } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { requireAdmin } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/rejected-bales")({
+  beforeLoad: ({ context }) => requireAdmin(context.user),
   head: () => ({ meta: [{ title: "Rejected Bales · TIMS" }] }),
   component: RejectedBales,
 });

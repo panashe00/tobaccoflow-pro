@@ -13,12 +13,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, Upload, MoreHorizontal, Loader2 } from "lucide-react";
-import { BRANCHES, ROLES, EXCHANGE_RATE, SALE_DATE } from "@/lib/dummy-data";
+import { BRANCHES } from "@/lib/dummy-data";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
+import { requireAdmin } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/settings")({
+  beforeLoad: ({ context }) => requireAdmin(context.user),
   head: () => ({ meta: [{ title: "Settings · TIMS" }] }),
   component: Settings,
 });
@@ -789,9 +791,68 @@ function PrintingTab() {
   );
 }
 
+// ---------- Permissions tab (permanent list of roles and permissions) ----------
+
+    type PermissionMatrix = {
+      modules: { key: string; label: string }[];
+      roles: { key: string; label: string; locked: boolean }[];
+      matrix: Record<string, Record<string, boolean>>;
+    };
+
+    function PermissionsTab() {
+      const queryClient = useQueryClient();
+      const { data } = useQuery<PermissionMatrix>({ queryKey: ["role-permissions"], queryFn: api.getRolePermissions });
+
+      const toggle = useMutation({
+        mutationFn: (v: { role: string; module: string; allowed: boolean }) =>
+          api.setRolePermission(v.role, v.module, v.allowed),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["role-permissions"] }),
+        onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to update permission"),
+      });
+
+      if (!data) return <Card><CardContent className="p-6 text-sm text-muted-foreground">Loading…</CardContent></Card>;
+
+      return (
+        <Card>
+          <CardHeader><CardTitle className="text-sm">Role Permissions</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">
+              Controls which modules each role can open. Admins always have every module. Users, Settings, Rejected Bales and Delete Tickets are admin-only.
+            </p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Role</TableHead>
+                  {data.modules.map((m) => <TableHead key={m.key}>{m.label}</TableHead>)}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.roles.map((r) => (
+                  <TableRow key={r.key}>
+                    <TableCell className="font-medium">{r.label}</TableCell>
+                    {data.modules.map((m) => (
+                      <TableCell key={m.key}>
+                        <Switch
+                          checked={data.matrix[r.key]?.[m.key] ?? false}
+                          disabled={r.locked || toggle.isPending}
+                          onCheckedChange={(v) => toggle.mutate({ role: r.key, module: m.key, allowed: v })}
+                        />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      );
+    }
 // ---------- Main Settings component ----------
 
 function Settings() {
+  const { user } = Route.useRouteContext();
+  const superAdmin = !!user.is_superuser;
+  
   return (
     <AppShell>
       <div className="p-6 max-w-[1400px] mx-auto">
@@ -800,79 +861,58 @@ function Settings() {
         <Tabs defaultValue="general">
           <TabsList>
             <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="grades">Grades</TabsTrigger>
-            <TabsTrigger value="buyers">Buyers</TabsTrigger>
-            <TabsTrigger value="deductions">Deductions</TabsTrigger>
-            <TabsTrigger value="branches">Branches</TabsTrigger>
-            <TabsTrigger value="permissions">Permissions</TabsTrigger>
             <TabsTrigger value="scales">Scales</TabsTrigger>
-            <TabsTrigger value="hessian-codes">Hessian Codes</TabsTrigger>
             <TabsTrigger value="ticket-books">Ticket Books</TabsTrigger>
-            <TabsTrigger value="rejection-codes">Rejection Codes</TabsTrigger>
-            <TabsTrigger value="printing">Printouts</TabsTrigger>
+            {superAdmin && (
+              <>
+                <TabsTrigger value="grades">Grades</TabsTrigger>
+                <TabsTrigger value="buyers">Buyers</TabsTrigger>
+                <TabsTrigger value="deductions">Deductions</TabsTrigger>
+                <TabsTrigger value="branches">Branches</TabsTrigger>
+                <TabsTrigger value="hessian-codes">Hessian Codes</TabsTrigger>
+                <TabsTrigger value="rejection-codes">Rejection Codes</TabsTrigger>
+                <TabsTrigger value="permissions">Permissions</TabsTrigger>
+                <TabsTrigger value="printing">Printouts</TabsTrigger>
+              </>
+            )}
           </TabsList>
 
-          <TabsContent value="general">
-            <SaleDateCard />
-          </TabsContent>
-
-          <TabsContent value="grades"><GradesTab /></TabsContent>
-          <TabsContent value="buyers"><BuyersTab /></TabsContent>
-          <TabsContent value="deductions"><DeductionsTab /></TabsContent>
-
-          <TabsContent value="branches">
-            <Card>
-              <CardHeader><CardTitle className="text-sm">Branches</CardTitle></CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Branch</TableHead><TableHead>Region</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    {BRANCHES.map((b, i) => (
-                      <TableRow key={b}>
-                        <TableCell className="font-mono">BR-{String(i + 1).padStart(3, "0")}</TableCell>
-                        <TableCell>{b}</TableCell>
-                        <TableCell className="text-muted-foreground">Zimbabwe</TableCell>
-                        <TableCell><Badge variant="outline" className="bg-success/15 text-success border-success/30">Active</Badge></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="permissions">
-            <Card>
-              <CardHeader><CardTitle className="text-sm">Role Permissions Matrix</CardTitle></CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Role</TableHead>
-                      <TableHead>D-Notes</TableHead><TableHead>Weighing</TableHead><TableHead>Processing</TableHead>
-                      <TableHead>Salesheet</TableHead><TableHead>Dispatch</TableHead><TableHead>Reports</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ROLES.map((r) => (
-                      <TableRow key={r}>
-                        <TableCell className="font-medium">{r}</TableCell>
-                        {[true, true, true, r === "Admin" || r === "Sales Clerk", r === "Admin" || r === "Dispatch Clerk", true].map((on, i) => (
-                          <TableCell key={i}><Switch defaultChecked={on} /></TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
+          <TabsContent value="general"><SaleDateCard /></TabsContent>
           <TabsContent value="scales"><ScalesTab /></TabsContent>
-          <TabsContent value="hessian-codes"><HessianCodesTab /></TabsContent>
           <TabsContent value="ticket-books"><TicketBooksTab /></TabsContent>
-          <TabsContent value="rejection-codes"><RejectionCodesTab /></TabsContent>
-          <TabsContent value="printing"><PrintingTab /></TabsContent>
+          {superAdmin && (
+            <>
+              <TabsContent value="grades"><GradesTab /></TabsContent>
+              <TabsContent value="buyers"><BuyersTab /></TabsContent>
+              <TabsContent value="deductions"><DeductionsTab /></TabsContent>
+
+              <TabsContent value="branches">
+                <Card>
+                  <CardHeader><CardTitle className="text-sm">Branches</CardTitle></CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Branch</TableHead><TableHead>Region</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                      <TableBody>
+                        {BRANCHES.map((b, i) => (
+                          <TableRow key={b}>
+                            <TableCell className="font-mono">BR-{String(i + 1).padStart(3, "0")}</TableCell>
+                            <TableCell>{b}</TableCell>
+                            <TableCell className="text-muted-foreground">Zimbabwe</TableCell>
+                            <TableCell><Badge variant="outline" className="bg-success/15 text-success border-success/30">Active</Badge></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="permissions"><PermissionsTab /></TabsContent>
+              <TabsContent value="hessian-codes"><HessianCodesTab /></TabsContent>       
+              <TabsContent value="rejection-codes"><RejectionCodesTab /></TabsContent>
+              <TabsContent value="printing"><PrintingTab /></TabsContent>
+            </>
+          )}
         </Tabs>
       </div>
     </AppShell>

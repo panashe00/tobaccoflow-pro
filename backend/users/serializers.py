@@ -16,6 +16,34 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'date_joined']
 
+class AccessRulesMixin:
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        actor = self.context['request'].user
+        if actor.is_superuser:
+            return attrs
+
+        creating = self.instance is None
+        role = attrs.get('role', None if creating else self.instance.role)
+
+        if role == 'admin' and (creating or self.instance.role != 'admin'):
+            raise serializers.ValidationError({'role': 'Only a super admin can assign the admin role.'})
+
+        if creating:
+            attrs['branches'] = attrs.get('branches') or list(actor.branches)
+
+        if 'branches' in attrs and not set(attrs['branches']) <= set(actor.branches):
+            raise serializers.ValidationError(
+                {'branches': f"You can only assign your own branches: {', '.join(actor.branches)}."}
+            )
+
+        if not creating and self.instance.pk == actor.pk:
+            if attrs.get('is_active') is False:
+                raise serializers.ValidationError({'is_active': 'You cannot deactivate your own account.'})
+            if 'role' in attrs and attrs['role'] != actor.role:
+                raise serializers.ValidationError({'role': 'You cannot change your own role.'})
+        return attrs
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
     """Admin-only: create a new user."""

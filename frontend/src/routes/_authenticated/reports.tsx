@@ -9,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileSpreadsheet, Rows4, FileText, Printer, BarChart3, AlertTriangle, Truck, Receipt, DollarSign } from "lucide-react";
 import { BRANCHES } from "@/lib/dummy-data";
 import { toast } from "sonner";
+import { requireModule } from "@/lib/access";
 
 
 export const Route = createFileRoute("/_authenticated/reports")({
+  beforeLoad: ({ context }) => requireModule(context.user, "reports"),
   head: () => ({ meta: [{ title: "Reports · TIMS" }] }),
   component: Reports,
 });

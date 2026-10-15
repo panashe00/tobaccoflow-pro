@@ -7,12 +7,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from saledates.models import SaleDate
 from deliverynotes.models import DeliveryNote
-from users.permissions import IsAdminOrReadOnly
+from users.permissions import IsAdminOrReadOnly, IsSuperAdminOrReadOnly, module_permission
 from .models import Scale, HessianCode, TicketBook, Bale
 from .serializers import (
     ScaleSerializer, HessianCodeSerializer, TicketBookSerializer,
     BaleSerializer, WeighingDeliveryNoteSerializer,
 )
+from users.scoping import scope_by_branch, in_user_branches
 
 class ScaleViewSet(viewsets.ModelViewSet):
     queryset = Scale.objects.all()
@@ -23,7 +24,7 @@ class ScaleViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         if user.branches:
-            qs = qs.filter(branch__in=user.branches)
+            qs = scope_by_branch(super().get_queryset(), self.request.user)
         return qs
 
     def perform_create(self, serializer):
@@ -44,7 +45,7 @@ class ScaleViewSet(viewsets.ModelViewSet):
 class HessianCodeViewSet(viewsets.ModelViewSet):
     queryset = HessianCode.objects.all()
     serializer_class = HessianCodeSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsSuperAdminOrReadOnly]
 
 
 class TicketBookViewSet(viewsets.ModelViewSet):
@@ -56,7 +57,7 @@ class TicketBookViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         if user.branches:
-            qs = qs.filter(branch__in=user.branches)
+            qs = scope_by_branch(super().get_queryset(), self.request.user)
         return qs
 
     def perform_create(self, serializer):
@@ -79,13 +80,13 @@ class TicketBookViewSet(viewsets.ModelViewSet):
 class BaleViewSet(viewsets.ModelViewSet):
     queryset = Bale.objects.all()
     serializer_class = BaleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [module_permission('weighing')]
 
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
         if user.branches:
-            qs = qs.filter(branch__in=user.branches)
+            qs = scope_by_branch(qs, self.request.user)
         dn_id = self.request.query_params.get('delivery_note')
         if dn_id:
             qs = qs.filter(delivery_note_id=dn_id)

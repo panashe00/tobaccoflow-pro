@@ -3,9 +3,10 @@ from .models import Salesheet, SalesheetDeductionLine, SalesheetBaleLine
 
 
 class SalesheetBaleLineSerializer(serializers.ModelSerializer):
+    bale_id = serializers.IntegerField(read_only=True)
     class Meta:
         model = SalesheetBaleLine
-        fields = ['id', 'bale', 'group_number', 'lot_number', 'mass', 'buyer_grade', 'price_per_kg', 'value', 'is_rejected', 'rejection_description']
+        fields = ['id', 'bale', 'bale_id', 'group_number', 'lot_number', 'mass', 'buyer_grade', 'price_per_kg', 'value', 'is_rejected', 'rejection_description']
 
 
 class SalesheetDeductionLineSerializer(serializers.ModelSerializer):

@@ -3,15 +3,17 @@ from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from backend.users.permissions import module_permission
 from saledates.models import SaleDate
 from .models import DeliveryNote
 from .serializers import DeliveryNoteSerializer
 from growerdeductions.models import GrowerDeduction
+from users.scoping import scope_by_branch, in_user_branches
 
 class DeliveryNoteViewSet(viewsets.ModelViewSet):
     queryset = DeliveryNote.objects.select_related('grower', 'transporter', 'sale_date').all()
     serializer_class = DeliveryNoteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [module_permission('delivery_notes')]
     filter_backends = [filters.SearchFilter]
     search_fields = ['dn_number', 'grower__first_name', 'grower__last_name', 'grower__grower_number']
 
@@ -19,9 +21,7 @@ class DeliveryNoteViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         if user.branches:
-            qs = qs.filter(branch__in=user.branches)
-        if self.action == 'list' and not self.request.query_params.get('search'):
-            qs = qs.filter(sale_date__is_open=True, status='pending')
+            qs = scope_by_branch(super().get_queryset(), self.request.user)
         return qs
 
     def create(self, request, *args, **kwargs):
@@ -66,7 +66,7 @@ class DeliveryNoteViewSet(viewsets.ModelViewSet):
         delivery_note.save(update_fields=['number_of_bales'])
         return Response(DeliveryNoteSerializer(delivery_note).data)
 
-    @action(detail=True, methods=['post'], url_path='complete-deductions')
+    @action(detail=True, methods=['post'], url_path='complete-deductions', permission_classes=[module_permission('deductions')])
     def complete_deductions(self, request, pk=None):
         dn = self.get_object()
         if not dn.sale_date.is_open:

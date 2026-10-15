@@ -2,7 +2,7 @@ from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from users.permissions import IsAdminOrReadOnly
+from users.permissions import IsAdminOrReadOnly, IsSuperAdminOrReadOnly
 from .models import Buyer, BuyerGrade
 from .serializers import BuyerSerializer, BuyerGradeSerializer
 
@@ -10,7 +10,7 @@ from .serializers import BuyerSerializer, BuyerGradeSerializer
 class BuyerViewSet(viewsets.ModelViewSet):
     queryset = Buyer.objects.all().prefetch_related('grades')
     serializer_class = BuyerSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsSuperAdminOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'code']
 
@@ -33,7 +33,7 @@ class BuyerViewSet(viewsets.ModelViewSet):
 
 class BuyerGradeViewSet(viewsets.ModelViewSet):
     serializer_class = BuyerGradeSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsSuperAdminOrReadOnly]
 
     def get_queryset(self):
         qs = BuyerGrade.objects.all()

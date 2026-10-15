@@ -12,8 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Scan, Trash2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { requireAdmin } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/delete-tickets")({
+  beforeLoad: ({ context }) => requireAdmin(context.user),
   head: () => ({ meta: [{ title: "Delete Tickets · TIMS" }] }),
   component: DeleteTickets,
 });

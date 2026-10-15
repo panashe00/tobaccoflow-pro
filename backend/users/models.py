@@ -39,3 +39,12 @@ class User(AbstractUser):
 
     class Meta:
         db_table = 'users'
+
+class RolePermission(models.Model):
+    role = models.CharField(max_length=20, choices=User.ROLE_CHOICES)
+    module = models.CharField(max_length=30)
+    allowed = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'role_permissions'
+        unique_together = ('role', 'module')

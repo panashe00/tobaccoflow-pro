@@ -3,6 +3,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+
+from backend.users.permissions import IsBranchAdmin
 from .models import SaleDate
 from .serializers import SaleDateSerializer
 
@@ -32,7 +34,7 @@ class SaleDateViewSet(viewsets.ReadOnlyModelViewSet):
             return Response(None)
         return Response(SaleDateSerializer(sale_date).data)
 
-    @action(detail=False, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=False, methods=['post'], permission_classes=[IsBranchAdmin])
     def open(self, request):
         """Opens a new sale date, atomically closing whichever one is currently open for this branch (if any)."""
         branch = get_user_branch(request.user)
@@ -71,7 +73,7 @@ class SaleDateViewSet(viewsets.ReadOnlyModelViewSet):
             )
         return Response(SaleDateSerializer(sale_date).data)
 
-    @action(detail=False, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=False, methods=['post'], permission_classes=[IsBranchAdmin])
     def set_exchange_rate(self, request):
         branch = get_user_branch(request.user)
         exchange_rate = request.data.get('exchange_rate')

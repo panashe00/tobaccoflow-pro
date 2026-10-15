@@ -5,7 +5,7 @@ from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
-from users.permissions import IsAdminOrReadOnly
+from users.permissions import IsSuperAdminOrReadOnly
 from .models import TimbGrade
 from .serializers import TimbGradeSerializer
 
@@ -13,7 +13,7 @@ from .serializers import TimbGradeSerializer
 class TimbGradeViewSet(viewsets.ModelViewSet):
     queryset = TimbGrade.objects.all()
     serializer_class = TimbGradeSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsSuperAdminOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['code']
 

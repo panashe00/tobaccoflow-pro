@@ -11,8 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Scan, Printer, Truck, X, Loader2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { requireModule } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/dispatch")({
+  beforeLoad: ({ context }) => requireModule(context.user, "dispatch"),
   head: () => ({ meta: [{ title: "Dispatch · TIMS" }] }),
   component: Dispatch,
 });

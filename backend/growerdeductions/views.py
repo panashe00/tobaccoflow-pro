@@ -3,6 +3,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from backend.users.permissions import module_permission
+from backend.users.scoping import in_user_branches, scope_by_branch
 from deliverynotes.models import DeliveryNote
 from .models import GrowerDeduction
 from .serializers import GrowerDeductionSerializer, PendingDeductionDeliveryNoteSerializer
@@ -11,13 +13,13 @@ from .serializers import GrowerDeductionSerializer, PendingDeductionDeliveryNote
 class GrowerDeductionViewSet(viewsets.ModelViewSet):
     queryset = GrowerDeduction.objects.all()
     serializer_class = GrowerDeductionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [module_permission('deductions')]
 
     def get_queryset(self):
         qs = super().get_queryset()
         dn_id = self.request.query_params.get('delivery_note')
         if dn_id:
-            qs = qs.filter(delivery_note_id=dn_id)
+            qs = scope_by_branch(super().get_queryset(), self.request.user, 'delivery_note__branch')
         return qs
 
     def _check_editable(self, dn):
@@ -27,6 +29,8 @@ class GrowerDeductionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         dn_id = request.data.get('delivery_note')
         dn = DeliveryNote.objects.filter(pk=dn_id).select_related('sale_date').first()
+        if not in_user_branches(request.user, dn.branch):
+            return Response({'detail': 'This Delivery Note does not belong to your branch.'}, status=403)
         if not dn:
             return Response({'detail': 'Delivery Note not found.'}, status=404)
         try:
@@ -52,6 +56,8 @@ class GrowerDeductionViewSet(viewsets.ModelViewSet):
         amount = request.data.get('amount')
 
         dn = DeliveryNote.objects.filter(pk=dn_id).select_related('sale_date', 'transporter').first()
+        if not in_user_branches(request.user, dn.branch):
+            return Response({'detail': 'This Delivery Note does not belong to your branch.'}, status=403)
         if not dn:
             return Response({'detail': 'Delivery Note not found.'}, status=400)
         try:

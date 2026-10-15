@@ -19,8 +19,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { requireModule } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/deductions")({
+  beforeLoad: ({ context }) => requireModule(context.user, "deductions"),
   head: () => ({ meta: [{ title: "Deductions · TIMS" }] }),
   component: Deductions,
 });

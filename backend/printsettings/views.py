@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from backend.users.permissions import IsSuperAdmin
 from .models import PrintSettings
 from .serializers import PrintSettingsSerializer
 
@@ -10,7 +11,7 @@ class PrintSettingsView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
-        return [IsAuthenticated()] if self.request.method == 'GET' else [IsAdminUser()]
+        return [IsAuthenticated()] if self.request.method == 'GET' else [IsSuperAdmin()]
 
     def get(self, request):
         obj = PrintSettings.get_solo()

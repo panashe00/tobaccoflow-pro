@@ -58,7 +58,13 @@ export const api = {
 
 
  // ENDS HERE 
- //  NOW GROWERS
+ // PERMISSIONS
+  getRolePermissions: () => request("/role-permissions/"),
+  setRolePermission: (role: string, module: string, allowed: boolean) =>
+    request("/role-permissions/", { method: "PATCH", body: JSON.stringify({ role, module, allowed }) }),
+ 
+ 
+  //  NOW GROWERS
   listGrowers: (search?: string) =>
     request(`/growers/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
   createGrower: (data: Record<string, unknown>) =>

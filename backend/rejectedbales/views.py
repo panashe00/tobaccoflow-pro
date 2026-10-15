@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from weighing.models import Bale
 from weighing.barcodes import split_and_validate_scan
-from users.permissions import IsAdminOrReadOnly
+from users.permissions import IsAdminOrReadOnly, IsBranchAdmin, IsSuperAdminOrReadOnly
 from .models import RejectionCode, RejectedBale
 from .serializers import RejectionCodeSerializer, RejectedBaleSerializer
 
@@ -12,11 +12,11 @@ from .serializers import RejectionCodeSerializer, RejectedBaleSerializer
 class RejectionCodeViewSet(viewsets.ModelViewSet):
     queryset = RejectionCode.objects.all()
     serializer_class = RejectionCodeSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsSuperAdminOrReadOnly]
 
 
 class RejectedBaleViewSet(viewsets.GenericViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsBranchAdmin]
     serializer_class = RejectedBaleSerializer
 
     @action(detail=False, methods=['get'])

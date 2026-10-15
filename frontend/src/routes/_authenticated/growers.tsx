@@ -17,8 +17,10 @@ import { Plus, Search, MoreHorizontal, Loader2, FileSpreadsheet, FileText, Print
 import { BRANCHES } from "@/lib/dummy-data";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
+import { requireModule } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/growers")({
+  beforeLoad: ({ context }) => requireModule(context.user, "growers"),
   head: () => ({ meta: [{ title: "Growers List · TIMS" }] }),
   component: Growers,
 });
