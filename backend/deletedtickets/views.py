@@ -3,7 +3,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
-from backend.users.permissions import IsBranchAdmin
+from users.permissions import IsBranchAdmin
 from weighing.models import Bale
 from weighing.barcodes import split_and_validate_scan
 from .models import DeletedTicketLog

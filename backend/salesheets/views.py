@@ -6,8 +6,8 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from backend.users.permissions import module_permission
-from backend.users.scoping import in_user_branches
+from users.permissions import module_permission
+from users.scoping import in_user_branches
 from deliverynotes.models import DeliveryNote
 from weighing.models import Bale
 from .models import Salesheet, SalesheetDeductionLine, SalesheetCounter, SalesheetBaleLine

@@ -2,7 +2,7 @@ from rest_framework import serializers, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from backend.users.permissions import module_permission
+from users.permissions import module_permission
 from weighing.models import Bale
 from weighing.barcodes import split_and_validate_scan
 from .models import DispatchLoad, DispatchLoadBale

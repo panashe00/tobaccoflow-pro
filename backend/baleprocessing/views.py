@@ -5,8 +5,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from backend.users.permissions import module_permission
-from backend.users.scoping import scope_by_branch
+from users.permissions import module_permission
+from users.scoping import scope_by_branch
 from weighing.models import Bale
 from weighing.barcodes import split_and_validate_scan
 from ticketprocessing.models import TicketPreProcessing

@@ -58,6 +58,11 @@ export const api = {
 
 
  // ENDS HERE 
+
+ // DASHBOARD
+  getDashboard: () => request("/dashboard/"),
+
+  
  // PERMISSIONS
   getRolePermissions: () => request("/role-permissions/"),
   setRolePermission: (role: string, module: string, allowed: boolean) =>

@@ -54,18 +54,14 @@ const AUDIT = [
   { time: "2024-10-22 08:31", user: "rchirwa", action: "Created Delivery Note DN-2410-00234", ip: "10.0.4.12" },
 ];
 
-const { user } = Route.useRouteContext();
-const branchOptions = user.is_superuser ? BRANCHES : user.branches;
-const roleOptions = user.is_superuser ? ROLE_OPTIONS : ROLE_OPTIONS.filter((r) => r.value !== "admin");
 
-
-function BranchPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+function BranchPicker({ value, onChange, options }: { value: string[]; onChange: (v: string[]) => void; options: string[] }) {
   const toggle = (b: string) =>
     onChange(value.includes(b) ? value.filter((x) => x !== b) : [...value, b]);
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {branchOptions.map((b: string) => {
+      {options.map((b: string) => {
         const active = value.includes(b);
         return (
           <button
@@ -101,27 +97,30 @@ const emptyForm: FormState = {
 };
 
 function UserFormDialog({
-  open, onOpenChange, editingUser, onSaved,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  editingUser: ApiUser | null;
-  onSaved: () => void;
-}) {
-  const isEdit = !!editingUser;
-  const [form, setForm] = useState<FormState>(
-    editingUser
-      ? {
-          first_name: editingUser.first_name,
-          last_name: editingUser.last_name,
-          username: editingUser.username,
-          email: editingUser.email,
-          contact: editingUser.contact ?? "",
-          role: editingUser.role,
-          branches: editingUser.branches,
-          password: "",
-        }
-      : emptyForm
+    open, onOpenChange, editingUser, onSaved,
+  }: {
+    open: boolean;
+    onOpenChange: (v: boolean) => void;
+    editingUser: ApiUser | null;
+    onSaved: () => void;
+  }) {
+    const { user } = Route.useRouteContext();
+    const branchOptions = user.is_superuser ? BRANCHES : user.branches;
+    const roleOptions = user.is_superuser ? ROLE_OPTIONS : ROLE_OPTIONS.filter((r) => r.value !== "admin");
+    const isEdit = !!editingUser;
+    const [form, setForm] = useState<FormState>(
+      editingUser
+        ? {
+            first_name: editingUser.first_name,
+            last_name: editingUser.last_name,
+            username: editingUser.username,
+            email: editingUser.email,
+            contact: editingUser.contact ?? "",
+            role: editingUser.role,
+            branches: editingUser.branches,
+            password: "",
+          }
+        : emptyForm
   );
 
   const mutation = useMutation({
@@ -190,7 +189,7 @@ function UserFormDialog({
           )}
           <div className="space-y-1.5 col-span-2">
             <Label className="text-xs">Branch Access</Label>
-            <BranchPicker value={form.branches} onChange={(b) => setForm({ ...form, branches: b })} />
+            <BranchPicker value={form.branches} onChange={(b) => setForm({ ...form, branches: b })} options={branchOptions} />
           </div>
         </div>
         <DialogFooter>

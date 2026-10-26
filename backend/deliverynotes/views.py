@@ -3,7 +3,7 @@ from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from backend.users.permissions import module_permission
+from users.permissions import module_permission
 from saledates.models import SaleDate
 from .models import DeliveryNote
 from .serializers import DeliveryNoteSerializer

@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'rejectedbales',
     'deletedtickets',
     'printsettings',
+    'dashboard',
 ]
 
 MIDDLEWARE = [

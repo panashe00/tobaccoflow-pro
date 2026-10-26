@@ -3,8 +3,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from backend.users.permissions import module_permission
-from backend.users.scoping import in_user_branches, scope_by_branch
+from users.permissions import module_permission
+from users.scoping import in_user_branches, scope_by_branch
 from deliverynotes.models import DeliveryNote
 from .models import GrowerDeduction
 from .serializers import GrowerDeductionSerializer, PendingDeductionDeliveryNoteSerializer
