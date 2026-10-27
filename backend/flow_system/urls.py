@@ -39,6 +39,7 @@ urlpatterns = [
     path('api/', include('deletedtickets.urls')),
     path('api/', include('printsettings.urls')),
     path('api/', include('dashboard.urls')),
+    path('api/', include('seasons.urls')),
 ]
 
 if settings.DEBUG:

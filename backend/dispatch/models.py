@@ -9,6 +9,7 @@ class DispatchLoad(models.Model):
     driver_name = models.CharField(max_length=100)
     destination = models.CharField(max_length=150)
     dispatch_date = models.DateField()
+    season = models.ForeignKey('seasons.Season', on_delete=models.PROTECT, null=True, blank=True, related_name='loads')
     is_open = models.BooleanField(default=True)
     opened_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='loads_opened')
     opened_at = models.DateTimeField(auto_now_add=True)

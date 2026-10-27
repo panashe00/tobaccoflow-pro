@@ -21,7 +21,7 @@ class DeliveryNoteViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         if user.branches:
-            qs = scope_by_branch(super().get_queryset(), self.request.user)
+            qs = scope_by_branch(super().get_queryset().filter(sale_date__season__is_open=True), self.request.user)
         return qs
 
     def create(self, request, *args, **kwargs):

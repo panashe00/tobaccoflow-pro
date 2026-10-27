@@ -1,8 +1,7 @@
-from datetime import date
 from decimal import Decimal
 
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
-from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
+from django.db.models.functions import Coalesce, ExtractMonth
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,6 +14,8 @@ from saledates.models import SaleDate
 from salesheets.models import Salesheet
 from users.models import User
 from weighing.models import Bale
+from seasons.scoping import current_season
+from seasons.models import Season
 
 # mass x effective price (a resolved correction wins over the originally captured price)
 VALUE = ExpressionWrapper(
@@ -23,6 +24,8 @@ VALUE = ExpressionWrapper(
 )
 
 MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+
 
 
 class DashboardView(APIView):
@@ -35,6 +38,10 @@ class DashboardView(APIView):
 
         open_dates = list(SaleDate.objects.filter(is_open=True, branch__in=branches))
         open_ids = [s.id for s in open_dates]
+
+        season = current_season()
+        sid = season.id if season else 0   # 0 matches nothing, so a closed floor shows empty data
+        previous = Season.objects.filter(is_open=False).order_by('-closed_at').first()
 
         notes = DeliveryNote.objects.filter(sale_date__in=open_ids)
         bales = Bale.objects.filter(sale_date__in=open_ids)
@@ -58,7 +65,7 @@ class DashboardView(APIView):
 
         # Daily intake: bales received per sale date, last 14 sale dates
         intake_rows = (
-            DeliveryNote.objects.filter(branch__in=branches)
+            DeliveryNote.objects.filter(branch__in=branches, sale_date__season_id=sid)
             .values('sale_date__date').annotate(bales=Sum('number_of_bales'))
             .order_by('-sale_date__date')[:14]
         )
@@ -71,8 +78,7 @@ class DashboardView(APIView):
         branch_rows = (
             BaleProcessing.objects.filter(
                 bale__branch__in=branches,
-                bale__sale_date__date__year=today.year,
-                bale__sale_date__date__month=today.month,
+                bale__sale_date__season_id=sid,
             )
             .values('bale__branch').annotate(value=Sum(VALUE)).order_by('-value')
         )
@@ -81,24 +87,17 @@ class DashboardView(APIView):
         ]
 
         # Monthly comparison: this year vs last year, by sale-date month
+        season_ids = [s.id for s in (season, previous) if s]
         monthly_rows = (
-            BaleProcessing.objects.filter(
-                bale__branch__in=branches,
-                bale__sale_date__date__gte=date(today.year - 1, 1, 1),
-                bale__sale_date__date__lte=date(today.year, 12, 31),
-            )
-            .annotate(y=ExtractYear('bale__sale_date__date'), m=ExtractMonth('bale__sale_date__date'))
-            .values('y', 'm').annotate(value=Sum(VALUE))
+            BaleProcessing.objects.filter(bale__branch__in=branches, bale__sale_date__season_id__in=season_ids)
+            .annotate(m=ExtractMonth('bale__sale_date__date'))
+            .values('bale__sale_date__season_id', 'm').annotate(value=Sum(VALUE))
         )
         cur, prev = {m: 0.0 for m in range(1, 13)}, {m: 0.0 for m in range(1, 13)}
         for r in monthly_rows:
-            (cur if r['y'] == today.year else prev)[r['m']] = float(r['value'] or 0)
+            (cur if r['bale__sale_date__season_id'] == sid else prev)[r['m']] = float(r['value'] or 0)
         monthly = [
-            {
-                'month': MONTHS[i - 1],
-                'current': cur[i] if i <= today.month else None,  # no line for future months
-                'previous': prev[i],
-            }
+            {'month': MONTHS[i - 1], 'current': cur[i] if i <= today.month else None, 'previous': prev[i]}
             for i in range(1, 13)
         ]
 
@@ -124,7 +123,7 @@ class DashboardView(APIView):
                 'id': l.id, 'truck_registration': l.truck_registration, 'destination': l.destination,
                 'bales': l.n, 'is_open': l.is_open,
             }
-            for l in DispatchLoad.objects.filter(branch__in=branches)
+            for l in DispatchLoad.objects.filter(branch__in=branches, season_id=sid)
             .annotate(n=Count('items')).order_by('-opened_at')[:5]
         ]
 
@@ -136,6 +135,10 @@ class DashboardView(APIView):
                     for s in open_dates
                 ],
             },
+            'season': {
+                'id': season.id,
+                'name': season.name
+            } if season else None,
             'kpis': kpis,
             'intake': intake,
             'branch_performance': branch_performance,

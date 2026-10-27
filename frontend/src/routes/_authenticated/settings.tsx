@@ -440,6 +440,8 @@ function SaleDateCard() {
     onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to set exchange rate"),
   });
 
+  const { data: season } = useQuery({ queryKey: ["season-current"], queryFn: api.getCurrentSeason });
+
   return (
     <Card>
       <CardHeader><CardTitle className="text-sm">Sale Date</CardTitle></CardHeader>
@@ -464,9 +466,13 @@ function SaleDateCard() {
                         type="number" step="0.01" placeholder="Enter rate once published"
                         value={lateRate} onChange={(e) => setLateRate(e.target.value)} className="font-mono h-8 max-w-[180px]"
                       />
+                      {!season && (
+                        <p className="text-sm text-destructive">No season is open. The system admin must open a season before a sale date can be opened.</p>
+                      )}
                       <Button size="sm" variant="outline" onClick={() => setRateMutation.mutate()} disabled={!lateRate || setRateMutation.isPending}>
                         Set Rate
                       </Button>
+                      disabled={!nextDate || !season || setRateMutation.isPending}
                     </div>
                   )}
                 </>
@@ -799,54 +805,175 @@ function PrintingTab() {
       matrix: Record<string, Record<string, boolean>>;
     };
 
-    function PermissionsTab() {
-      const queryClient = useQueryClient();
-      const { data } = useQuery<PermissionMatrix>({ queryKey: ["role-permissions"], queryFn: api.getRolePermissions });
+  function PermissionsTab() {
+    const queryClient = useQueryClient();
+    const { data } = useQuery<PermissionMatrix>({ queryKey: ["role-permissions"], queryFn: api.getRolePermissions });
 
-      const toggle = useMutation({
-        mutationFn: (v: { role: string; module: string; allowed: boolean }) =>
-          api.setRolePermission(v.role, v.module, v.allowed),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["role-permissions"] }),
-        onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to update permission"),
-      });
+    const toggle = useMutation({
+      mutationFn: (v: { role: string; module: string; allowed: boolean }) =>
+        api.setRolePermission(v.role, v.module, v.allowed),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ["role-permissions"] }),
+      onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to update permission"),
+    });
 
-      if (!data) return <Card><CardContent className="p-6 text-sm text-muted-foreground">Loading…</CardContent></Card>;
+    if (!data) return <Card><CardContent className="p-6 text-sm text-muted-foreground">Loading…</CardContent></Card>;
 
-      return (
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Role Permissions</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground mb-3">
-              Controls which modules each role can open. Admins always have every module. Users, Settings, Rejected Bales and Delete Tickets are admin-only.
-            </p>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Role</TableHead>
-                  {data.modules.map((m) => <TableHead key={m.key}>{m.label}</TableHead>)}
+    return (
+      <Card>
+        <CardHeader><CardTitle className="text-sm">Role Permissions</CardTitle></CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground mb-3">
+            Controls which modules each role can open. Admins always have every module. Users, Settings, Rejected Bales and Delete Tickets are admin-only.
+          </p>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Role</TableHead>
+                {data.modules.map((m) => <TableHead key={m.key}>{m.label}</TableHead>)}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.roles.map((r) => (
+                <TableRow key={r.key}>
+                  <TableCell className="font-medium">{r.label}</TableCell>
+                  {data.modules.map((m) => (
+                    <TableCell key={m.key}>
+                      <Switch
+                        checked={data.matrix[r.key]?.[m.key] ?? false}
+                        disabled={r.locked || toggle.isPending}
+                        onCheckedChange={(v) => toggle.mutate({ role: r.key, module: m.key, allowed: v })}
+                      />
+                    </TableCell>
+                  ))}
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.roles.map((r) => (
-                  <TableRow key={r.key}>
-                    <TableCell className="font-medium">{r.label}</TableCell>
-                    {data.modules.map((m) => (
-                      <TableCell key={m.key}>
-                        <Switch
-                          checked={data.matrix[r.key]?.[m.key] ?? false}
-                          disabled={r.locked || toggle.isPending}
-                          onCheckedChange={(v) => toggle.mutate({ role: r.key, module: m.key, allowed: v })}
-                        />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      );
-    }
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    );
+  }
+
+
+// -------------New Season Settings (super admin Only) -------------
+
+type ApiSeason = { id: number; name: string; is_open: boolean; opened_at: string; closed_at: string | null };
+type CloseSummary = { season: ApiSeason; open_sale_dates: number; open_loads: number; notes_without_salesheet: number };
+
+function SeasonTab() {
+  const queryClient = useQueryClient();
+  const { data: current } = useQuery<ApiSeason | null>({ queryKey: ["season-current"], queryFn: api.getCurrentSeason });
+  const { data: seasons = [] } = useQuery<ApiSeason[]>({ queryKey: ["seasons"], queryFn: api.listSeasons });
+  const [name, setName] = useState(String(new Date().getFullYear()));
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [confirmName, setConfirmName] = useState("");
+
+  const { data: summary } = useQuery<CloseSummary>({
+    queryKey: ["season-close-summary"],
+    queryFn: api.getSeasonCloseSummary,
+    enabled: closeOpen && !!current,
+  });
+
+  // Every operational screen is season-scoped, so refresh everything after a change.
+  const refreshAll = () => queryClient.invalidateQueries();
+
+  const openSeason = useMutation({
+    mutationFn: () => api.openSeason(name.trim()),
+    onSuccess: () => { toast.success("Season opened"); refreshAll(); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to open season"),
+  });
+
+  const closeSeason = useMutation({
+    mutationFn: () => api.closeSeason(confirmName),
+    onSuccess: () => { toast.success("Season closed"); setCloseOpen(false); setConfirmName(""); refreshAll(); },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to close season"),
+  });
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader><CardTitle className="text-sm">Current Season</CardTitle></CardHeader>
+        <CardContent className="max-w-xl">
+          {current ? (
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{current.name}</span>
+                  <Badge className="bg-success/15 text-success border-success/30">Open</Badge>
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">Opened {new Date(current.opened_at).toLocaleDateString()} · applies to all branches</div>
+              </div>
+              <Button variant="outline" onClick={() => setCloseOpen(true)}>Close Season</Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">No season is open. Branches cannot open sale dates or dispatch loads until you open one.</p>
+              <div className="flex items-end gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Season Name</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 w-48" />
+                </div>
+                <Button onClick={() => openSeason.mutate()} disabled={!name.trim() || openSeason.isPending}>
+                  {openSeason.isPending && <Loader2 className="size-4 animate-spin" />}Open Season
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-sm">All Seasons</CardTitle></CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader><TableRow><TableHead>Season</TableHead><TableHead>Opened</TableHead><TableHead>Closed</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {seasons.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-medium">{s.name}</TableCell>
+                  <TableCell className="font-mono text-xs">{new Date(s.opened_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="font-mono text-xs">{s.closed_at ? new Date(s.closed_at).toLocaleDateString() : "—"}</TableCell>
+                  <TableCell><Badge variant={s.is_open ? "default" : "outline"}>{s.is_open ? "Open" : "Closed"}</Badge></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Dialog open={closeOpen} onOpenChange={(v) => { setCloseOpen(v); if (!v) setConfirmName(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Close season {current?.name}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This closes the season for every branch. All open sale dates and dispatch loads are closed with it, and a closed season cannot be reopened. Its records stay available in Reports.
+          </p>
+          {summary && (
+            <div className="rounded-md border p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Open sale dates (will be closed)</span><span className="font-mono">{summary.open_sale_dates}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Open dispatch loads (will be closed)</span><span className="font-mono">{summary.open_loads}</span></div>
+              <div className={`flex justify-between ${summary.notes_without_salesheet > 0 ? "text-destructive" : ""}`}>
+                <span>Delivery notes without a salesheet</span><span className="font-mono">{summary.notes_without_salesheet}</span>
+              </div>
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Type <span className="font-mono">{current?.name}</span> to confirm</Label>
+            <Input value={confirmName} onChange={(e) => setConfirmName(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCloseOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => closeSeason.mutate()} disabled={confirmName.trim() !== current?.name || closeSeason.isPending}>
+              {closeSeason.isPending && <Loader2 className="size-4 animate-spin" />}Close Season
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // ---------- Main Settings component ----------
 
 function Settings() {
@@ -873,6 +1000,7 @@ function Settings() {
                 <TabsTrigger value="rejection-codes">Rejection Codes</TabsTrigger>
                 <TabsTrigger value="permissions">Permissions</TabsTrigger>
                 <TabsTrigger value="printing">Printouts</TabsTrigger>
+                <TabsTrigger value="season">Season</TabsTrigger>
               </>
             )}
           </TabsList>
@@ -911,6 +1039,7 @@ function Settings() {
               <TabsContent value="hessian-codes"><HessianCodesTab /></TabsContent>       
               <TabsContent value="rejection-codes"><RejectionCodesTab /></TabsContent>
               <TabsContent value="printing"><PrintingTab /></TabsContent>
+              <TabsContent value="season"><SeasonTab /></TabsContent>
             </>
           )}
         </Tabs>

@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from users.permissions import IsBranchAdmin
 from .models import SaleDate
 from .serializers import SaleDateSerializer
+from seasons.scoping import current_season
 
 
 def get_user_branch(user):
@@ -21,7 +22,7 @@ class SaleDateViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         branch = get_user_branch(self.request.user)
-        return super().get_queryset().filter(branch=branch) if branch else super().get_queryset().none()
+        return super().get_queryset().filter(season__is_open=True, branch=branch) if branch else super().get_queryset().none()
 
     @action(detail=False, methods=['get'])
     def current(self, request):
@@ -40,6 +41,9 @@ class SaleDateViewSet(viewsets.ReadOnlyModelViewSet):
         if not branch:
             return Response({'detail': 'You have no branch assigned.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        season = current_season()
+        if not season:
+            return Response({'detail': 'No season is currently open. A sale date cannot be opened without an open season.'}, status=status.HTTP_400_BAD_REQUEST)
         date = request.data.get('date')
         exchange_rate = request.data.get('exchange_rate')
         if not date:
@@ -63,12 +67,14 @@ class SaleDateViewSet(viewsets.ReadOnlyModelViewSet):
             existing.opened_by = request.user
             existing.closed_at = None
             existing.closed_by = None
+            existing.season = season
             existing.save()
             sale_date = existing
         else:
             sale_date = SaleDate.objects.create(
                 branch=branch, date=date, exchange_rate=exchange_rate,
                 is_open=True, opened_at=timezone.now(), opened_by=request.user,
+                season=season,
             )
         return Response(SaleDateSerializer(sale_date).data)
 

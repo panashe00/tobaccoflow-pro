@@ -17,7 +17,7 @@ class DispatchLoadViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
-        return qs.filter(branch__in=user.branches) if user.branches else qs.none()
+        return qs.filter(season__is_open=True, branch__in=user.branches) if user.branches else qs.none()
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -46,7 +46,7 @@ class DispatchLoadViewSet(viewsets.ModelViewSet):
 
         user = request.user
         branch = user.branches[0] if user.branches else None
-        bale = Bale.objects.filter(ticket_number=ticket_number, branch=branch).select_related('delivery_note').first()
+        bale = Bale.objects.filter(sale_date__season__is_open=True, ticket_number=ticket_number, branch=branch).select_related('delivery_note').first()
         if not bale:
             return Response({'detail': 'Ticket not found in the system.'}, status=status.HTTP_404_NOT_FOUND)
 

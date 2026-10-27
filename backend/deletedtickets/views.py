@@ -39,7 +39,7 @@ class DeletedTicketViewSet(viewsets.GenericViewSet):
 
         user = request.user
         branch = user.branches[0] if user.branches else None
-        bale = Bale.objects.filter(ticket_number=ticket_number, branch=branch).select_related(
+        bale = Bale.objects.filter(sale_date__season__is_open=True, ticket_number=ticket_number, branch=branch).select_related(
             'delivery_note__grower'
         ).first()
         if not bale:
@@ -72,7 +72,7 @@ class DeletedTicketViewSet(viewsets.GenericViewSet):
         if not reason:
             return Response({'detail': 'A reason is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        bale = Bale.objects.filter(pk=bale_id).select_related('delivery_note').first()
+        bale = Bale.objects.filter(sale_date__season__is_open=True, pk=bale_id).select_related('delivery_note').first()
         if not bale:
             return Response({'detail': 'Bale not found.'}, status=status.HTTP_404_NOT_FOUND)
 

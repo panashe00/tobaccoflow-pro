@@ -40,6 +40,7 @@ class TicketPreProcessingViewSet(viewsets.GenericViewSet):
         branch = user.branches[0] if user.branches else None
 
         bale = Bale.objects.filter(
+            sale_date__season__is_open=True,
             ticket_number=ticket_number,
             branch=branch
         ).select_related(

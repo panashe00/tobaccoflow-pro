@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'deletedtickets',
     'printsettings',
     'dashboard',
+    'seasons',
 ]
 
 MIDDLEWARE = [

@@ -7,6 +7,7 @@ class SaleDate(models.Model):
     date = models.DateField()
     exchange_rate = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
     is_open = models.BooleanField(default=False)
+    season = models.ForeignKey('seasons.Season', on_delete=models.PROTECT, null=True, blank=True, related_name='sale_dates')
 
     opened_at = models.DateTimeField(null=True, blank=True)
     opened_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sale_dates_opened')

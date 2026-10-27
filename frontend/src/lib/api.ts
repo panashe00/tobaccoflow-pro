@@ -262,4 +262,12 @@ export const api = {
   },
   getDeliveryNote: (id: number) => request(`/delivery-notes/${id}/`),
   getDispatchLoad: (id: number) => request(`/dispatch-loads/${id}/`),
+
+
+  // SEASON MANAGEMENT
+  getCurrentSeason: () => request("/seasons/current/"),
+  listSeasons: () => request("/seasons/"),
+  getSeasonCloseSummary: () => request("/seasons/close-summary/"),
+  openSeason: (name: string) => request("/seasons/open/", { method: "POST", body: JSON.stringify({ name }) }),
+  closeSeason: (confirm_name: string) => request("/seasons/close/", { method: "POST", body: JSON.stringify({ confirm_name }) }),
 };

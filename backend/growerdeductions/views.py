@@ -19,7 +19,7 @@ class GrowerDeductionViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         dn_id = self.request.query_params.get('delivery_note')
         if dn_id:
-            qs = scope_by_branch(super().get_queryset(), self.request.user, 'delivery_note__branch')
+            qs = scope_by_branch(super().get_queryset().filter(delivery_note__sale_date__season__is_open=True), self.request.user, 'delivery_note__branch')
         return qs
 
     def _check_editable(self, dn):
@@ -90,7 +90,7 @@ class GrowerDeductionViewSet(viewsets.ModelViewSet):
         search = request.query_params.get('search')
 
         base_qs = (
-            DeliveryNote.objects.filter(branch=branch, status__in=['weighed', 'verified'])
+            DeliveryNote.objects.filter(branch=branch, status__in=['weighed', 'verified'], sale_date__season__is_open=True)
             .select_related('grower', 'transporter', 'sale_date')
         )
 

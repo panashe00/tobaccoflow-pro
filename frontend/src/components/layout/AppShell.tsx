@@ -71,6 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const adminItems = NAV_ADMIN.filter((n) => canSee(n.module));
 
   const { data: saleDate } = useQuery({ queryKey: ["sale-date-current"], queryFn: api.getCurrentSaleDate });
+  const { data: season } = useQuery({ queryKey: ["season-current"], queryFn: api.getCurrentSeason });
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -159,10 +160,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Badge variant="outline" className="gap-1.5 font-normal">
               <span className="size-1.5 rounded-full bg-success" />Branch: {user.branches?.[0] ?? "—"}
             </Badge>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="size-4" />
-              <span className="absolute top-2 right-2 size-1.5 bg-destructive rounded-full" />
-            </Button>
+            <Badge variant="outline" className="gap-1.5 font-normal">
+              <span className={`size-1.5 rounded-full ${season ? "bg-success" : "bg-destructive"}`} />
+              {season ? `Season: ${season.name}` : "No open season"}
+            </Badge>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="gap-2 h-9 px-2">

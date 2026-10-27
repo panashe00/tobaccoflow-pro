@@ -33,7 +33,7 @@ class BaleProcessingViewSet(viewsets.GenericViewSet):
         user = request.user
         branch = user.branches[0] if user.branches else None
 
-        bale = Bale.objects.filter(ticket_number=ticket_number, branch=branch).select_related(
+        bale = Bale.objects.filter(sale_date__season__is_open=True, ticket_number=ticket_number, branch=branch).select_related(
             'delivery_note__grower', 'sale_date'
         ).first()
         if not bale:

@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 type DashboardData = {
-  scope: { branches: string[]; sale_dates: { branch: string; date: string; has_rate: boolean }[] };
+  scope: { season: {id: number; name: string} | null; branches: string[]; sale_dates: { branch: string; date: string; has_rate: boolean }[] };
   kpis: {
     growers_today: number; bales_received: number; bales_weighed: number; salesheets: number;
     dispatches: number; dispatch_bales: number; pending_verification: number;
@@ -78,9 +78,9 @@ function Dashboard() {
 
   const description = !data
     ? "Loading…"
-    : saleDates.length === 0
-    ? `No sale date is open · ${data.scope.branches.join(", ") || "no branch assigned"}`
-    : `Live view of the open sale date · ${saleDates.map((s) => `${s.branch} ${s.date}`).join(" · ")}`;
+    : !data.scope.season
+    ? "No season is open"
+    : `Season ${data.scope.season.name} · ${saleDates.length ? saleDates.map((s) => `${s.branch} ${s.date}`).join(" · ") : "no sale date open"}`;
 
   return (
     <AppShell>
@@ -179,7 +179,7 @@ function Dashboard() {
         </div>
 
         <Card className="mb-6">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Monthly Sales Comparison (USD)</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Branch Perfomance (USD, This Season)</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={data?.monthly ?? []}>
@@ -188,8 +188,8 @@ function Dashboard() {
                 <YAxis stroke="oklch(0.5 0.015 240)" fontSize={11} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6 }} formatter={(v: number) => usd(v)} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line type="monotone" dataKey="current" stroke="oklch(0.36 0.06 155)" strokeWidth={2} name="Current Year" connectNulls={false} />
-                <Line type="monotone" dataKey="previous" stroke="oklch(0.65 0.13 75)" strokeWidth={2} strokeDasharray="4 4" name="Previous Year" />
+                <Line type="monotone" dataKey="current" stroke="oklch(0.36 0.06 155)" strokeWidth={2} name="This Season" connectNulls={false} />
+                <Line type="monotone" dataKey="previous" stroke="oklch(0.65 0.13 75)" strokeWidth={2} strokeDasharray="4 4" name="Previous Season" />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
